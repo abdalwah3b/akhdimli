@@ -882,21 +882,43 @@ window.addEventListener("storage", (e)=>{
   }
 });
 
-function completeOrderAndCredit(order, pro){
-  if(order.status === "مكتمل") return;
+async function completeOrderAndCredit(order, pro){
+  if(!order || !pro || order.status === "مكتمل") return;
+
+  const client = initSupabaseClient();
+  if(client){
+    try{
+      const { data: sData } = await client
+        .from("app_settings")
+        .select("commission_rate")
+        .eq("id", 1)
+        .maybeSingle();
+      if(sData && sData.commission_rate != null){
+        db.commissionRate = Math.max(0, Math.min(100, Number(sData.commission_rate)));
+      }
+    }catch(e){}
+  }
+
+  const gross = Math.max(0, Number(order.amount) || 0);
+  const rate = Math.max(0, Math.min(100, Number(db.commissionRate ?? 10)));
+  const commissionFee = Math.round(gross * (rate / 100));
+  const netAmount = Math.max(0, gross - commissionFee);
+
   order.status = "مكتمل";
   order.paid = true;
-  pro.jobs = (pro.jobs || 0) + 1;
-  const net = Math.round((Number(order.amount) || 0) * (1 - db.commissionRate/100));
-  pro.balance = (pro.balance || 0) + net;
+  pro.jobs = Number(pro.jobs || 0) + 1;
+  pro.balance = Number(pro.balance || 0) + netAmount;
+
   db.transactions.push({
-    id: Date.now() + Math.floor(Math.random()*90),
-    proId: pro.id,
-    title: "إتمام طلب #" + order.id + " (" + order.customerName + ")",
-    amount: net,
+    id: Date.now() + Math.floor(Math.random() * 90),
+    proId: Number(pro.id),
+    title: `إتمام طلب #${order.id} (${order.customerName}) — إجمالي ${gross} د.ل | خصم عمولة ${rate}% (${commissionFee} د.ل)`,
+    amount: netAmount,
     type: "credit",
     time: nowTime()
   });
+
+  saveDB();
 }
 
 function sendMsg({proId, customerPhone, customerName, sender, text}){
@@ -1047,12 +1069,13 @@ function render(){
           card.querySelector("[data-finish]").onclick = async ()=>{
             const ok = await confirmAction({
               title: "إتمام الطلب وتسوية الرصيد",
-              message: `تأكيد إتمام الطلب #${o.id} بقيمة <b>${o.amount} د.ل</b>؟`,
+              message: `تأكيد إتمام الطلب #${o.id} بقيمة <b>${o.amount} د.ل</b>؟ سيتم خصم نسبة العمولة (<b>${db.commissionRate}%</b>) تلقائياً.`,
               confirmText: "إتمام الطلب"
             });
             if(!ok) return;
-            completeOrderAndCredit(o, pro);
-            saveDB(); toast("تم إتمام الطلب وإضافة صافي الرصيد"); render();
+            await completeOrderAndCredit(o, pro);
+            toast("تم إتمام الطلب وخصم نسبة العمولة تلقائياً");
+            render();
           };
         }
         card.querySelector("[data-msgcust]").onclick = ()=>{
