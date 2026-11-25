@@ -616,6 +616,21 @@ function mapWdToRow(w){
   };
 }
 
+function mergeById(existingList = [], incomingList = []){
+  const map = new Map();
+  existingList.forEach(item => {
+    if(item && item.id != null) map.set(Number(item.id), item);
+  });
+  incomingList.forEach(item => {
+    if(item && item.id != null){
+      const id = Number(item.id);
+      const prev = map.get(id);
+      map.set(id, prev ? { ...prev, ...item } : item);
+    }
+  });
+  return [...map.values()].sort((a, b) => Number(a.id) - Number(b.id));
+}
+
 function notifyUserIncomingUpdates(){
   if(!hasInitialSyncCompleted){
     seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
@@ -677,7 +692,9 @@ async function syncFromSupabase(showToastOnConnect=false){
     ]);
     if(pRes.error) throw pRes.error;
 
-    const next = loadDB();
+    const current = loadDB();
+    const next = { ...current };
+
     if(sRes.data){
       next.commissionRate = Number(sRes.data.commission_rate ?? next.commissionRate);
       next.paymentSettings = {
@@ -688,13 +705,13 @@ async function syncFromSupabase(showToastOnConnect=false){
         accountHolder: sRes.data.account_holder || next.paymentSettings.accountHolder
       };
     }
-    if(Array.isArray(pRes.data) && pRes.data.length) next.pros = pRes.data.map(mapProFromRow);
-    if(Array.isArray(jRes.data)) next.joinRequests = jRes.data.map(mapJoinFromRow);
-    if(Array.isArray(oRes.data)) next.orders = oRes.data.map(mapOrderFromRow);
-    if(Array.isArray(mRes.data)) next.messages = mRes.data.map(mapMsgFromRow);
-    if(Array.isArray(rRes.data)) next.reviews = rRes.data.map(mapReviewFromRow);
-    if(Array.isArray(tRes.data)) next.transactions = tRes.data.map(mapTxFromRow);
-    if(Array.isArray(wRes.data)) next.withdrawals = wRes.data.map(mapWdFromRow);
+    if(Array.isArray(pRes.data) && pRes.data.length) next.pros = mergeById(current.pros, pRes.data.map(mapProFromRow));
+    if(Array.isArray(jRes.data)) next.joinRequests = mergeById(current.joinRequests, jRes.data.map(mapJoinFromRow));
+    if(Array.isArray(oRes.data)) next.orders = mergeById(current.orders, oRes.data.map(mapOrderFromRow));
+    if(Array.isArray(mRes.data)) next.messages = mergeById(current.messages, mRes.data.map(mapMsgFromRow));
+    if(Array.isArray(rRes.data)) next.reviews = mergeById(current.reviews, rRes.data.map(mapReviewFromRow));
+    if(Array.isArray(tRes.data)) next.transactions = mergeById(current.transactions, tRes.data.map(mapTxFromRow));
+    if(Array.isArray(wRes.data)) next.withdrawals = mergeById(current.withdrawals, wRes.data.map(mapWdFromRow));
 
     db = next;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
@@ -994,11 +1011,14 @@ function render(){
   }
 
   if(ui.tab === "orders"){
-    const myOrders = (db.orders || []).filter(o => {
-      if(currentAuthUser?.id && o.userId) return o.userId === currentAuthUser.id;
-      const uPh = normalizePhone(db.userProfile.phone);
-      return !uPh || normalizePhone(o.customerPhone) === uPh;
+    const allOrders = db.orders || [];
+    const uPh = normalizePhone(db.userProfile.phone);
+    let myOrders = allOrders.filter(o => {
+      if(currentAuthUser?.id && o.userId === currentAuthUser.id) return true;
+      if(uPh && normalizePhone(o.customerPhone) === uPh) return true;
+      return !o.userId;
     });
+    if(!myOrders.length) myOrders = allOrders;
 
     if(!myOrders.length){
       m.innerHTML = `<div class="empty"><b>لا توجد طلبات بعد</b>اطلب خدمة من الصفحة الرئيسية لتظهر هنا وتتابع حالتها.</div>`;
@@ -1044,12 +1064,7 @@ function render(){
       m.innerHTML = `<div class="empty"><b>لا يوجد حرفيون متاحون للمحادثة</b></div>`;
     } else {
       ui.activeChatProId = Number(pro.id);
-      const uPh = normalizePhone(db.userProfile.phone);
-      const chatMsgs = (db.messages || []).filter(msg => {
-        if(Number(msg.proId) !== Number(pro.id)) return false;
-        if(currentAuthUser?.id && msg.userId) return msg.userId === currentAuthUser.id;
-        return !uPh || normalizePhone(msg.customerPhone) === uPh;
-      });
+      const chatMsgs = (db.messages || []).filter(msg => Number(msg.proId) === Number(pro.id));
 
       m.innerHTML = `
         <div class="chat-box">
@@ -1068,7 +1083,7 @@ function render(){
               <div class="msg ${msg.sender === "user" ? "me" : "them"}">
                 <div>${msg.text}</div>
                 <div class="msg-meta">
-                  <span>${msg.sender === "user" ? (db.userProfile.name || "أنت") : pro.name}</span>
+                  <span>${msg.sender === "user" ? (msg.customerName || db.userProfile.name || "أنت") : pro.name}</span>
                   <span>${msg.time}</span>
                 </div>
               </div>
