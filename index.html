@@ -787,7 +787,16 @@ window.addEventListener("storage", (e)=>{
   }
 });
 
+function isProAccountSuspended(proId){
+  const p = (db.pros || []).find(x => Number(x.id) === Number(proId));
+  return Boolean(p && p.active === false);
+}
+
 function sendMsg({proId, customerPhone, customerName, sender, text}){
+  if(sender === "user" && isProAccountSuspended(proId)){
+    toast("حساب هذا الحرفي موقوف ولا يمكن التواصل معه حالياً");
+    return false;
+  }
   const clean = (text||"").trim();
   if(!clean) return false;
   const newId = Date.now() + Math.floor(Math.random()*100);
@@ -807,6 +816,10 @@ function sendMsg({proId, customerPhone, customerName, sender, text}){
 }
 
 function openOrderModal(pro){
+  if(pro.active === false){
+    toast("حساب هذا الحرفي موقوف ولا يمكن طلب خدمة منه حالياً");
+    return;
+  }
   const dlg = document.getElementById("dlg");
   const ps = db.paymentSettings || {};
   const canCash = ps.cashEnabled !== false;
@@ -839,6 +852,11 @@ function openOrderModal(pro){
   dlg.showModal();
   document.getElementById("oCancel").onclick = ()=>dlg.close();
   document.getElementById("oSend").onclick = ()=>{
+    if(isProAccountSuspended(pro.id)){
+      dlg.close();
+      toast("حساب هذا الحرفي موقوف ولا يمكن طلب خدمة منه حالياً");
+      return;
+    }
     const customerName = document.getElementById("oName").value.trim();
     const customerPhone = document.getElementById("oPhone").value.trim();
     const city = document.getElementById("oCity").value.trim() || pro.city;
@@ -940,7 +958,7 @@ function render(){
     `);
   }
 
-  const activePros = (db.pros || []).filter(p => p.active !== false);
+  const allPros = db.pros || [];
 
   if(ui.tab === "home"){
     const searchBox = document.createElement("div");
@@ -967,7 +985,7 @@ function render(){
 
     function renderList(){
       const q = ui.q.trim().toLowerCase();
-      const filtered = activePros.filter(p=>{
+      const filtered = allPros.filter(p=>{
         const okSpec = ui.spec === "الكل" || p.spec === ui.spec;
         const okQ = !q || [p.name,p.spec,p.city,p.desc].some(v => (v||"").toLowerCase().includes(q));
         return okSpec && okQ;
@@ -978,28 +996,37 @@ function render(){
         return;
       }
       filtered.forEach(p=>{
+        const suspended = p.active === false;
         const card = document.createElement("div");
         card.className = "card";
+        if(suspended) card.style.borderColor = "var(--bad)";
         card.innerHTML = `
           <div class="top">
             <div class="av">${specIcon(p.spec,25)}</div>
             <div>
               <h3>
                 ${p.name}
-                ${p.verified ? `<span class="badge ok">موثّق ✓</span>` : ""}
-                <span class="badge ${p.available!==false?"ok":""}">${p.available!==false?"متاح":"مشغول"}</span>
+                ${suspended
+                  ? `<span class="badge bad">حساب موقوف</span>`
+                  : `${p.verified ? `<span class="badge ok">موثّق ✓</span>` : ""}
+                     <span class="badge ${p.available!==false?"ok":""}">${p.available!==false?"متاح":"مشغول"}</span>`
+                }
               </h3>
               <div class="sub">${p.spec} • ${p.city} • <span class="rating">★ ${p.rating||5}</span> (${p.jobs||0} عمل) • <b>${p.price}</b></div>
             </div>
           </div>
-          <p class="desc">${p.desc}</p>
+          <p class="desc">${suspended ? "حساب هذا الحرفي موقوف حالياً من الإدارة ولا يمكن طلب خدمة منه أو التواصل معه." : p.desc}</p>
           <div class="row">
-            <button class="btn main" data-ord="${p.id}">طلب خدمة</button>
-            <button class="btn" data-cht="${p.id}">مراسلة</button>
+            <button class="btn main" data-ord="${p.id}" ${suspended ? "disabled" : ""}>طلب خدمة</button>
+            <button class="btn" data-cht="${p.id}" ${suspended ? "disabled" : ""}>مراسلة</button>
           </div>
         `;
-        card.querySelector("[data-ord]").onclick = ()=>openOrderModal(p);
+        card.querySelector("[data-ord]").onclick = ()=>{
+          if(suspended){ toast("حساب هذا الحرفي موقوف ولا يمكن طلب خدمة منه"); return; }
+          openOrderModal(p);
+        };
         card.querySelector("[data-cht]").onclick = ()=>{
+          if(suspended){ toast("حساب هذا الحرفي موقوف ولا يمكن التواصل معه"); return; }
           ui.activeChatProId = Number(p.id);
           ui.tab = "chat";
           render();
@@ -1025,6 +1052,7 @@ function render(){
     } else {
       [...myOrders].reverse().forEach(o=>{
         const pr = db.pros.find(x => Number(x.id) === Number(o.proId));
+        const suspended = pr?.active === false;
         const cls = o.status === "مكتمل" ? "ok" : o.status === "ملغي" ? "bad" : "";
         const card = document.createElement("div");
         card.className = "card";
@@ -1032,7 +1060,7 @@ function render(){
           <div class="top">
             <div class="av">${specIcon(pr?.spec || "سباكة",24)}</div>
             <div>
-              <h3>${pr ? pr.name : "حرفي #" + o.proId} <span class="sub">(${pr?.spec || ""})</span></h3>
+              <h3>${pr ? pr.name : "حرفي #" + o.proId} <span class="sub">(${pr?.spec || ""})</span> ${suspended ? `<span class="badge bad">موقوف</span>` : ""}</h3>
               <div class="sub">${o.city || pr?.city || ""} • <b>${o.amount} د.ل</b> • ${o.paymentMethod} ${o.date ? "• " + o.date : ""}</div>
             </div>
             <span class="badge ${cls}" style="margin-inline-start:auto">${o.status}</span>
@@ -1041,13 +1069,14 @@ function render(){
           ${o.ratingGiven > 0 ? `<div class="sub" style="margin-bottom:8px">تقييمك: <b style="color:var(--acc)">★ ${o.ratingGiven}</b> ${o.reviewText ? "— " + o.reviewText : ""}</div>` : ""}
           <div class="row">
             ${o.status === "مكتمل" && !o.ratingGiven ? `<button class="btn main sm" data-rev="${o.id}">تقييم الخدمة</button>` : ""}
-            <button class="btn sm" data-cht="${o.proId}">مراسلة الحرفي</button>
+            <button class="btn sm" data-cht="${o.proId}" ${suspended ? "disabled" : ""}>مراسلة الحرفي</button>
           </div>
         `;
         if(card.querySelector("[data-rev]")){
           card.querySelector("[data-rev]").onclick = ()=>openReviewModal(o, pr);
         }
         card.querySelector("[data-cht]").onclick = ()=>{
+          if(suspended){ toast("حساب هذا الحرفي موقوف ولا يمكن التواصل معه"); return; }
           ui.activeChatProId = Number(o.proId);
           ui.tab = "chat";
           render();
@@ -1058,12 +1087,12 @@ function render(){
   }
 
   if(ui.tab === "chat"){
-    const proList = activePros.length ? activePros : db.pros;
-    const pro = proList.find(p => Number(p.id) === Number(ui.activeChatProId)) || proList[0];
+    const pro = allPros.find(p => Number(p.id) === Number(ui.activeChatProId)) || allPros[0];
     if(!pro){
       m.innerHTML = `<div class="empty"><b>لا يوجد حرفيون متاحون للمحادثة</b></div>`;
     } else {
       ui.activeChatProId = Number(pro.id);
+      const suspended = pro.active === false;
       const chatMsgs = (db.messages || []).filter(msg => Number(msg.proId) === Number(pro.id));
 
       m.innerHTML = `
@@ -1071,14 +1100,20 @@ function render(){
           <div class="chat-head">
             <div class="av" style="width:38px;height:38px">${specIcon(pro.spec,20)}</div>
             <div style="flex:1;min-width:0">
-              <b>${pro.name}</b>
+              <b>${pro.name} ${suspended ? `<span class="badge bad">موقوف</span>` : ""}</b>
               <div class="sub">${pro.spec} • ${pro.city}</div>
             </div>
             <select id="chatProSelect" style="width:auto;padding:5px 8px;font-size:12.5px" aria-label="اختر حرفياً">
-              ${proList.map(p=>`<option value="${p.id}" ${Number(p.id)===Number(pro.id)?"selected":""}>${p.name} (${p.spec})</option>`).join("")}
+              ${allPros.map(p=>`<option value="${p.id}" ${Number(p.id)===Number(pro.id)?"selected":""}>${p.name} (${p.spec})${p.active===false?" — موقوف":""}</option>`).join("")}
             </select>
           </div>
           <div class="chat-msgs" id="chatMsgs">
+            ${suspended ? `
+              <div class="card" style="border-color:var(--bad);margin:0">
+                <b style="color:var(--bad)">حساب هذا الحرفي موقوف حالياً</b>
+                <div class="sub" style="margin-top:3px">لا يمكنك إرسال رسائل أو التواصل مع هذا الحرفي لأن حسابه موقوف من الإدارة.</div>
+              </div>
+            ` : ""}
             ${chatMsgs.length ? chatMsgs.map(msg => `
               <div class="msg ${msg.sender === "user" ? "me" : "them"}">
                 <div>${msg.text}</div>
@@ -1087,11 +1122,11 @@ function render(){
                   <span>${msg.time}</span>
                 </div>
               </div>
-            `).join("") : `<div class="empty"><b>ابدأ المحادثة مع ${pro.name}</b>اسأل عن المواعيد أو تفاصيل الخدمة.</div>`}
+            `).join("") : (!suspended ? `<div class="empty"><b>ابدأ المحادثة مع ${pro.name}</b>اسأل عن المواعيد أو تفاصيل الخدمة.</div>` : "")}
           </div>
           <form class="chat-form" id="chatForm">
-            <input id="chatInput" placeholder="اكتب رسالتك..." autocomplete="off">
-            <button class="btn main sm" type="submit" aria-label="إرسال">${svgIcon("send",18)}</button>
+            <input id="chatInput" placeholder="${suspended ? "حساب الحرفي موقوف ولا يمكن المراسلة..." : "اكتب رسالتك..."}" autocomplete="off" ${suspended ? "disabled" : ""}>
+            <button class="btn main sm" type="submit" aria-label="إرسال" ${suspended ? "disabled" : ""}>${svgIcon("send",18)}</button>
           </form>
         </div>
       `;
@@ -1105,6 +1140,7 @@ function render(){
       };
       document.getElementById("chatForm").onsubmit = e => {
         e.preventDefault();
+        if(suspended){ toast("حساب هذا الحرفي موقوف ولا يمكن التواصل معه"); return; }
         const inp = document.getElementById("chatInput");
         if(sendMsg({
           proId: pro.id,
