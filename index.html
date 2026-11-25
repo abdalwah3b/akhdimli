@@ -859,6 +859,16 @@ async function syncFromSupabase(showToastOnConnect=false){
   }
 }
 
+async function deleteRecordFromSupabase(table, id){
+  const client = initSupabaseClient();
+  if(!client || !id) return;
+  try{
+    await client.from(table).delete().eq("id", Number(id));
+  }catch(err){
+    console.warn("Supabase delete error:", table, err?.message || err);
+  }
+}
+
 async function pushStateToSupabase(){
   const client = initSupabaseClient();
   if(!client || sbSyncing) return;
@@ -965,7 +975,7 @@ function confirmAction({title="تأكيد الإجراء", message="هل أنت 
   });
 }
 function getPro(id){
-  return db.pros.find(p => p.id === id) || {name:"حرفي",spec:"عام",city:"",phone:"",price:"",available:true,rating:4.5,jobs:0,balance:0};
+  return db.pros.find(p => p.id === id) || {name:"حرفي",spec:"عام",city:"",phone:"",price:"",active:true,available:true,rating:4.5,jobs:0,balance:0};
 }
 function intlPhone(n){
   n = (n||"").replace(/\D/g,"");
@@ -978,6 +988,11 @@ function nowTime(){
   return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
 }
 function sendMsg({proId, customerPhone, customerName, sender, text}){
+  const pro = getPro(proId);
+  if(sender === "user" && pro.active === false){
+    toast("هذا الحرفي موقوف حالياً من الإدارة");
+    return false;
+  }
   const clean = (text||"").trim();
   if(!clean) return false;
   const newId = Date.now() + Math.floor(Math.random()*100);
@@ -1150,6 +1165,10 @@ function renderCards(m){
 }
 
 function openOrderModal(pro){
+  if(pro.active === false){
+    toast("هذا الحرفي موقوف حالياً من الإدارة");
+    return;
+  }
   const ps = db.paymentSettings;
   const dlg = document.getElementById("dlg");
   const hasAnyPay = ps.cashEnabled || ps.transferEnabled;
@@ -1208,7 +1227,8 @@ function openOrderModal(pro){
     const phone = document.getElementById("mPhone").value.trim();
     const desc = document.getElementById("mDesc").value.trim();
     const date = document.getElementById("mDate").value;
-    const amount = Number(document.getElementById("mAmount").value) || 50;
+    const rawAmt = Number(document.getElementById("mAmount").value);
+    const amount = Number.isFinite(rawAmt) && rawAmt > 0 ? Math.round(rawAmt) : 50;
     const paymentMethod = paySel ? paySel.value : "نقدي";
     const transferRef = paymentMethod === "تحويل" ? (document.getElementById("mTransferRef")?.value.trim() || "") : "";
     if(!name || !phone || !desc){ toast("يرجى تعبئة الاسم والهاتف ووصف المشكلة"); return; }
@@ -1312,25 +1332,32 @@ function render(){
   }
 
   if(ui.tab === "chat"){
-    const activePros = db.pros.filter(p=>p.active);
-    const pro = activePros.find(p=>p.id === ui.activeProId) || activePros[0];
+    const selectablePros = db.pros.filter(p => p.active || p.id === ui.activeProId);
+    const pro = selectablePros.find(p => p.id === ui.activeProId) || selectablePros[0];
     if(!pro){
       m.innerHTML = `<div class="empty"><b>لا يوجد حرفيون متاحون للمحادثة</b></div>`;
     } else {
       ui.activeProId = pro.id;
+      const isProInactive = pro.active === false;
       const myPhone = db.userProfile.phone || "";
       const convMsgs = myMessages.filter(msg => msg.proId === pro.id);
 
       m.innerHTML = `
+        ${isProInactive ? `
+          <div class="card" style="border-color:var(--bad)">
+            <b style="color:var(--bad)">هذا الحرفي موقوف حالياً</b>
+            <div class="sub" style="margin-top:3px">تم إيقاف حساب هذا الحرفي من قِبل الإدارة، لذا لا يمكن إرسال رسائل جديدة إليه.</div>
+          </div>
+        ` : ""}
         <div class="chat-box">
           <div class="chat-head">
             <div class="av" style="width:38px;height:38px">${specIcon(pro.spec, 20)}</div>
             <div style="flex:1;min-width:0">
-              <b>${pro.name}</b>
+              <b>${pro.name} ${isProInactive ? `<span class="badge bad">موقوف</span>` : ""}</b>
               <div class="sub">${pro.spec} • ${pro.city}</div>
             </div>
             <select id="chatProSelect" style="width:auto;padding:5px 8px;font-size:12.5px" aria-label="اختر الحرفي">
-              ${activePros.map(p=>`<option value="${p.id}" ${p.id===pro.id?"selected":""}>${p.name}</option>`).join("")}
+              ${selectablePros.map(p=>`<option value="${p.id}" ${p.id===pro.id?"selected":""}>${p.name}${p.active===false?" (موقوف)":""}</option>`).join("")}
             </select>
           </div>
           <div class="chat-msgs" id="chatMsgs">
@@ -1345,8 +1372,8 @@ function render(){
             `).join("") : `<div class="empty"><b>ابدأ المحادثة مع ${pro.name}</b>اسأل عن السعر أو المواعيد أو تفاصيل العمل.</div>`}
           </div>
           <form class="chat-form" id="chatForm">
-            <input id="chatInput" placeholder="اكتب رسالتك للحرفي..." autocomplete="off">
-            <button class="btn main sm" type="submit" aria-label="إرسال">${svgIcon("send", 18)}</button>
+            <input id="chatInput" placeholder="${isProInactive ? "الحرفي موقوف حالياً..." : "اكتب رسالتك للحرفي..."}" autocomplete="off" ${isProInactive ? "disabled" : ""}>
+            <button class="btn main sm" type="submit" aria-label="إرسال" ${isProInactive ? "disabled" : ""}>${svgIcon("send", 18)}</button>
           </form>
         </div>
       `;
