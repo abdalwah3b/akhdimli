@@ -219,6 +219,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 <script>
 const STORAGE_KEY = "akhdimli_shared_db_v6";
 const SPECS = ["الكل","سباكة","كهرباء","نجارة","دهان","تكييف","بناء","حدادة","ألمنيوم","تنظيف"];
+const SEED_DEMO_DATA = false; // اجعلها true فقط عند الرغبة في تعبئة بيانات تجريبية أولية لقاعدة فارغة
 
 const P = {
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
@@ -260,8 +261,8 @@ const DEFAULT_DATA = {
   paymentSettings: {
     cashEnabled: true,
     transferEnabled: true,
-    bankName: "مصرف تجريبي / محفظة إلكترونية",
-    accountNumber: "000-0000000-00",
+    bankName: "مصرف معتمد / محفظة إلكترونية",
+    accountNumber: "",
     accountHolder: "منصة اخدملي"
   },
   pros: [
@@ -270,38 +271,24 @@ const DEFAULT_DATA = {
     {id:3,name:"المعلم إدريس",spec:"نجارة",city:"شحات",phone:"218910000003",price:"حسب العمل",desc:"مطابخ وأبواب وغرف نوم حسب الطلب.",rating:4.9,jobs:18,verified:true,active:true,available:false,balance:310},
     {id:4,name:"المعلم مفتاح",spec:"دهان",city:"البيضاء",phone:"218910000004",price:"من 15 د.ل للمتر",desc:"دهان داخلي وخارجي وتجديد الجدران.",rating:4.5,jobs:27,verified:false,active:true,available:true,balance:90}
   ],
-  joinRequests: [
-    {id:101,name:"المعلم صالح",spec:"تكييف",city:"البيضاء",phone:"218920000010",desc:"خبرة 8 سنوات في صيانة وتركيب المكيفات.",status:"قيد المراجعة"},
-    {id:102,name:"المعلم محمود",spec:"حدادة",city:"سوسة",phone:"218920000011",desc:"تفصيل أبواب حماية وهناجر حديدية.",status:"قيد المراجعة"}
-  ],
-  orders: [
-    {id:501,proId:1,customerName:"أحمد علي",customerPhone:"0912345678",city:"البيضاء",desc:"تسريب ماء تحت حوض المطبخ",date:"2026-11-26",amount:60,paymentMethod:"نقدي",transferRef:"",paid:false,status:"قيد التنفيذ",ratingGiven:0,reviewText:""},
-    {id:502,proId:2,customerName:"مريم سالم",customerPhone:"0923456789",city:"شحات",desc:"فحص لوحة التوزيع وتبديل قاطع",date:"2026-11-25",amount:50,paymentMethod:"تحويل",transferRef:"TRF-88421",paid:true,status:"مكتمل",ratingGiven:5,reviewText:"عمل ممتاز وسريع"}
-  ],
-  messages: [
-    {id:901,proId:1,customerPhone:"0912345678",customerName:"أحمد علي",sender:"user",text:"السلام عليكم معلم سالم، هل يمكنك معاينة التسريب اليوم عصراً؟",time:"11:15"},
-    {id:902,proId:1,customerPhone:"0912345678",customerName:"أحمد علي",sender:"pro",text:"وعليكم السلام، نعم متاح بعد الساعة 4 عصراً في البيضاء.",time:"11:18"}
-  ],
-  reviews: [
-    {id:701,proId:1,customerName:"سالم محمود",stars:5,comment:"معلم دقيق ومحترم جداً في المواعيد.",date:"2026-11-20"},
-    {id:702,proId:2,customerName:"مريم سالم",stars:5,comment:"عمل ممتاز وسريع",date:"2026-11-25"}
-  ],
-  transactions: [
-    {id:801,proId:1,title:"إتمام طلب #502 (صافي بعد العمولة)",amount:54,type:"credit",time:"أمس"}
-  ],
+  joinRequests: [],
+  orders: [],
+  messages: [],
+  reviews: [],
+  transactions: [],
   withdrawals: [],
-  userProfile: {name:"أحمد علي",phone:"0912345678",city:"البيضاء",address:"حي الليثي",bio:""}
+  userProfile: {name:"",phone:"",city:"البيضاء",address:"",bio:""}
 };
 
 function loadDB(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : structuredClone(DEFAULT_DATA);
-    if(!parsed.messages) parsed.messages = structuredClone(DEFAULT_DATA.messages);
+    if(!parsed.messages) parsed.messages = [];
     if(!parsed.paymentSettings) parsed.paymentSettings = structuredClone(DEFAULT_DATA.paymentSettings);
     if(!parsed.userProfile) parsed.userProfile = structuredClone(DEFAULT_DATA.userProfile);
-    if(!parsed.reviews) parsed.reviews = structuredClone(DEFAULT_DATA.reviews);
-    if(!parsed.transactions) parsed.transactions = structuredClone(DEFAULT_DATA.transactions);
+    if(!parsed.reviews) parsed.reviews = [];
+    if(!parsed.transactions) parsed.transactions = [];
     if(!parsed.withdrawals) parsed.withdrawals = [];
     parsed.pros = (parsed.pros || []).map(p => ({ available: true, ...p }));
     parsed.orders = (parsed.orders || []).map(o => ({ ratingGiven: 0, reviewText: "", ...o }));
@@ -503,7 +490,7 @@ function openAuthModal(initialMode = "login"){
       </div>
       ${mode === "signup" ? `
         <label>الاسم الكامل</label>
-        <input id="authName" value="${db.userProfile?.name || ""}" placeholder="مثال: عبدالوهاب">
+        <input id="authName" value="${db.userProfile?.name || ""}" placeholder="الاسم الثلاثي">
         <label>رقم الهاتف (اختياري)</label>
         <input id="authPhone" value="${db.userProfile?.phone || ""}" placeholder="091...">
         <label>المدينة (اختياري)</label>
@@ -797,14 +784,10 @@ function mapWdToRow(w){
 }
 
 async function seedInitialCloudIfEmpty(client){
+  if(!SEED_DEMO_DATA) return;
   const { data: existingPros, error: pErr } = await client.from("pros").select("id").limit(1);
   if(pErr || (existingPros && existingPros.length > 0)) return;
   await client.from("pros").upsert(DEFAULT_DATA.pros.map(mapProToRow), { onConflict: "id" });
-  await client.from("join_requests").upsert(DEFAULT_DATA.joinRequests.map(mapJoinToRow), { onConflict: "id" });
-  await client.from("orders").upsert(DEFAULT_DATA.orders.map(mapOrderToRow), { onConflict: "id" });
-  await client.from("messages").upsert(DEFAULT_DATA.messages.map(mapMsgToRow), { onConflict: "id" });
-  await client.from("reviews").upsert(DEFAULT_DATA.reviews.map(mapReviewToRow), { onConflict: "id" });
-  await client.from("transactions").upsert(DEFAULT_DATA.transactions.map(mapTxToRow), { onConflict: "id" });
 }
 
 async function syncFromSupabase(showToastOnConnect=false){
@@ -1194,9 +1177,9 @@ function openOrderModal(pro){
         ${ps.transferEnabled ? `<option value="تحويل" ${defaultMethod==="تحويل"?"selected":""}>تحويل / محفظة إلكترونية</option>` : ""}
       </select>
       <div id="transferBox" class="pay-box" style="display:none">
-        <div><b>الجهة:</b> ${ps.bankName}</div>
-        <div><b>رقم الحساب / المحفظة:</b> <code>${ps.accountNumber}</code></div>
-        <div><b>باسم:</b> ${ps.accountHolder}</div>
+        <div><b>الجهة:</b> ${ps.bankName || "حساب المنصة"}</div>
+        ${ps.accountNumber ? `<div><b>رقم الحساب / المحفظة:</b> <code>${ps.accountNumber}</code></div>` : ""}
+        <div><b>باسم:</b> ${ps.accountHolder || "منصة اخدملي"}</div>
         <label style="margin-top:8px">رقم مرجع التحويل (اختياري)</label>
         <input id="mTransferRef" placeholder="مثال: REF-12345">
       </div>
@@ -1520,13 +1503,13 @@ function render(){
         <h3 style="margin:0 0 4px">تعديل الملف الشخصي</h3>
         <div class="sub">تُحفظ بياناتك محلياً في المتصفح وتُزامَن مع حسابك عند تسجيل الدخول.</div>
         <label>الاسم الكامل</label>
-        <input id="upName" value="${up.name||""}" placeholder="مثال: عبدالوهاب">
+        <input id="upName" value="${up.name||""}" placeholder="الاسم الثلاثي">
         <label>رقم الهاتف</label>
         <input id="upPhone" value="${up.phone||""}" placeholder="0910000000">
         <label>المدينة</label>
         <input id="upCity" value="${up.city||""}" placeholder="البيضاء">
         <label>العنوان التفصيلي / الحي (اختياري)</label>
-        <input id="upAddress" value="${up.address||""}" placeholder="حي الليثي - قرب...">
+        <input id="upAddress" value="${up.address||""}" placeholder="الحي أو المنطقة...">
         <label>ملاحظة / نبذة (اختياري)</label>
         <textarea id="upBio" rows="2" placeholder="أوقات التواصل المفضلة أو ملاحظات...">${up.bio||""}</textarea>
         <div style="margin-top:14px">
