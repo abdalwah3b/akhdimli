@@ -157,6 +157,10 @@ label{display:block;font-weight:700;font-size:13.5px;margin:10px 0 4px}
 }
 .chat-form input{flex:1;padding:9px 12px}
 
+.auth-tabs{display:flex;gap:8px;margin-bottom:12px}
+.auth-tabs button{flex:1}
+.auth-err{color:var(--bad);font-size:13px;font-weight:700;margin-top:8px;min-height:20px}
+
 nav{
   position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--card);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;
@@ -317,6 +321,10 @@ let sbConnected = false;
 let sbSyncing = false;
 let sbReloadTimer = null;
 
+let currentAuthUser = null;
+let currentAuthProfile = null;
+let authBannerMessage = "";
+
 function initSupabaseClient(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase?.createClient) return null;
   if(!sbClient){
@@ -325,6 +333,200 @@ function initSupabaseClient(){
     });
   }
   return sbClient;
+}
+
+async function ensureProProfileAndStatus(user){
+  const client = initSupabaseClient();
+  if(!client || !user) return null;
+  try{
+    let { data: prof, error } = await client
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+    if(error) throw error;
+
+    const activePros = db.pros.filter(p=>p.active);
+    const currentPro = activePros.find(p=>p.id === ui.proId) || activePros[0];
+
+    if(!prof){
+      const meta = user.user_metadata || {};
+      const fallbackName = meta.full_name || currentPro?.name || user.email?.split("@")[0] || "حرفي";
+      const { data: inserted, error: insErr } = await client
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          full_name: fallbackName,
+          phone: meta.phone || currentPro?.phone || "",
+          city: meta.city || currentPro?.city || "",
+          bio: currentPro?.desc || "",
+          role: "pro",
+          is_active: true
+        }, { onConflict: "id" })
+        .select("*")
+        .maybeSingle();
+      if(!insErr && inserted) prof = inserted;
+    }
+
+    if(prof && prof.is_active === false){
+      authBannerMessage = "تم إيقاف هذا الحساب من قِبل الإدارة. يرجى التواصل مع الدعم.";
+      await client.auth.signOut();
+      currentAuthUser = null;
+      currentAuthProfile = null;
+      render();
+      return null;
+    }
+
+    currentAuthUser = user;
+    currentAuthProfile = prof || { id: user.id, full_name: user.user_metadata?.full_name || "", is_active: true, role: "pro" };
+    authBannerMessage = "";
+    return currentAuthProfile;
+  }catch(e){
+    console.warn("Pro profile check warning:", e?.message || e);
+    currentAuthUser = user;
+    return currentAuthProfile;
+  }
+}
+
+function initAuthListener(){
+  const client = initSupabaseClient();
+  if(!client || client._akhdimliProAuthBound) return;
+  client._akhdimliProAuthBound = true;
+
+  client.auth.getSession().then(async ({ data })=>{
+    if(data?.session?.user){
+      await ensureProProfileAndStatus(data.session.user);
+      render();
+    }
+  });
+
+  client.auth.onAuthStateChange(async (event, session)=>{
+    if(session?.user){
+      await ensureProProfileAndStatus(session.user);
+      render();
+    } else if(event === "SIGNED_OUT"){
+      currentAuthUser = null;
+      currentAuthProfile = null;
+      render();
+    }
+  });
+}
+
+function openAuthModal(initialMode = "login"){
+  const client = initSupabaseClient();
+  if(!client){ toast("تعذر الاتصال بخدمة المصادقة"); return; }
+
+  const activePros = db.pros.filter(p=>p.active);
+  const currentPro = activePros.find(p=>p.id === ui.proId) || activePros[0];
+
+  let mode = initialMode;
+  const dlg = document.getElementById("dlg");
+
+  const paint = ()=>{
+    dlg.innerHTML = `
+      <h2 style="margin:0 0 4px">${mode === "login" ? "تسجيل دخول الحرفي" : "إنشاء حساب حرفي"}</h2>
+      <div class="sub">إدارة طلباتك ومحادثاتك ومحفظتك بأمان.</div>
+      <div class="auth-tabs" style="margin-top:12px">
+        <button type="button" class="btn sm ${mode==="login"?"main":""}" id="mTabLogin">تسجيل دخول</button>
+        <button type="button" class="btn sm ${mode==="signup"?"main":""}" id="mTabSignup">حساب جديد</button>
+      </div>
+      ${mode === "signup" ? `
+        <label>الاسم / اللقب المهني</label>
+        <input id="authName" value="${currentPro?.name || ""}" placeholder="مثال: المعلم سالم">
+        <label>رقم الهاتف (اختياري)</label>
+        <input id="authPhone" value="${currentPro?.phone || ""}" placeholder="091...">
+        <label>المدينة (اختياري)</label>
+        <input id="authCity" value="${currentPro?.city || ""}" placeholder="البيضاء">
+      ` : ""}
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="authEmail" placeholder="name@example.com" autocomplete="email">
+      <label>كلمة المرور</label>
+      <input type="password" id="authPass" placeholder="••••••••" autocomplete="${mode==="login"?"current-password":"new-password"}">
+      <div class="auth-err" id="authModalErr">${authBannerMessage || ""}</div>
+      <div class="row" style="margin-top:14px">
+        <button type="button" class="btn" id="authCancel">إغلاق</button>
+        <button type="button" class="btn main" id="authSubmit">${mode === "login" ? "دخول" : "إنشاء الحساب"}</button>
+      </div>
+    `;
+
+    document.getElementById("mTabLogin").onclick = ()=>{ mode = "login"; paint(); };
+    document.getElementById("mTabSignup").onclick = ()=>{ mode = "signup"; paint(); };
+    document.getElementById("authCancel").onclick = ()=>dlg.close();
+
+    document.getElementById("authSubmit").onclick = async ()=>{
+      const errEl = document.getElementById("authModalErr");
+      const btn = document.getElementById("authSubmit");
+      const email = (document.getElementById("authEmail")?.value || "").trim();
+      const password = document.getElementById("authPass")?.value || "";
+      if(!email || !password){
+        errEl.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور.";
+        return;
+      }
+      btn.disabled = true;
+      errEl.textContent = "";
+      try{
+        if(mode === "login"){
+          const { data, error } = await client.auth.signInWithPassword({ email, password });
+          if(error) throw error;
+          const prof = await ensureProProfileAndStatus(data.user);
+          if(!prof){
+            errEl.textContent = authBannerMessage || "الحساب موقوف مؤقتاً.";
+            btn.disabled = false;
+            return;
+          }
+          dlg.close();
+          toast("تم تسجيل الدخول بنجاح");
+          render();
+        } else {
+          const fullName = (document.getElementById("authName")?.value || "").trim();
+          const phone = (document.getElementById("authPhone")?.value || "").trim();
+          const city = (document.getElementById("authCity")?.value || "").trim();
+          const { data, error } = await client.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: fullName, role: "pro" } }
+          });
+          if(error) throw error;
+          if(data.user && data.session){
+            await client.from("profiles").upsert({
+              id: data.user.id,
+              full_name: fullName || currentPro?.name || "",
+              phone: phone || currentPro?.phone || "",
+              city: city || currentPro?.city || "",
+              role: "pro",
+              is_active: true
+            }, { onConflict: "id" });
+            await ensureProProfileAndStatus(data.user);
+            dlg.close();
+            toast("تم إنشاء حساب الحرفي وتسجيل الدخول");
+            render();
+          } else {
+            errEl.style.color = "var(--ok)";
+            errEl.textContent = "تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول.";
+            btn.disabled = false;
+          }
+        }
+      }catch(e){
+        errEl.style.color = "var(--bad)";
+        errEl.textContent = e?.message || "تعذر إتمام العملية، تحقق من البيانات.";
+        btn.disabled = false;
+      }
+    };
+  };
+
+  paint();
+  dlg.showModal();
+}
+
+async function logoutPro(){
+  const client = initSupabaseClient();
+  if(client){
+    await client.auth.signOut();
+  }
+  currentAuthUser = null;
+  currentAuthProfile = null;
+  toast("تم تسجيل الخروج");
+  render();
 }
 
 function mapProFromRow(r){
@@ -746,12 +948,21 @@ function render(){
   const m = document.getElementById("main");
   m.innerHTML = "";
 
+  if(authBannerMessage && !currentAuthUser){
+    m.insertAdjacentHTML("beforeend",`
+      <div class="card" style="border-color:var(--bad)">
+        <b style="color:var(--bad)">تنبيه الحساب</b>
+        <div class="sub" style="margin-top:4px">${authBannerMessage}</div>
+      </div>
+    `);
+  }
+
   const activePros = db.pros.filter(p=>p.active);
   const pro = activePros.find(p=>p.id === ui.proId) || activePros[0];
 
   if(ui.tab !== "join"){
     if(!pro){
-      m.innerHTML = `<div class="empty"><b>لا يوجد حساب حرفي نشط</b>يمكنك تقديم طلب انضمام جديد من الأسفل.</div>`;
+      m.innerHTML += `<div class="empty"><b>لا يوجد حساب حرفي نشط</b>يمكنك تقديم طلب انضمام جديد من الأسفل.</div>`;
     } else {
       ui.proId = pro.id;
       const bar = document.createElement("div");
@@ -1039,6 +1250,24 @@ function render(){
     m.innerHTML += `
       <div class="card">
         <div class="top">
+          <div class="av">${svgIcon("user", 24)}</div>
+          <div>
+            <h3>حساب الحرفي</h3>
+            <div class="sub">${currentAuthUser ? (currentAuthUser.email || "") : "غير مسجل الدخول بالبريد الإلكتروني"}</div>
+          </div>
+          <span class="badge ${currentAuthUser?"ok":""}" style="margin-inline-start:auto">${currentAuthUser?"مسجّل الدخول":"وضع الزائر"}</span>
+        </div>
+        <div class="row" style="margin-top:12px">
+          ${currentAuthUser
+            ? `<button type="button" class="btn bad sm" id="logoutProBtn">تسجيل الخروج</button>`
+            : `<button type="button" class="btn main sm" id="openProLoginBtn">تسجيل الدخول</button>
+               <button type="button" class="btn sm" id="openProSignupBtn">إنشاء حساب</button>`
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="top">
           <div class="av">${specIcon(pro.spec, 26)}</div>
           <div>
             <h3>${pro.name} ${pro.verified ? `<span class="ver-ic">${svgIcon("verified", 17)}</span>` : ""}</h3>
@@ -1090,7 +1319,18 @@ function render(){
         `).join("") : `<div class="sub">لا توجد تقييمات من العملاء بعد.</div>`}
       </div>
     `;
-    document.getElementById("saveProProfileBtn").onclick = ()=>{
+
+    if(document.getElementById("logoutProBtn")){
+      document.getElementById("logoutProBtn").onclick = logoutPro;
+    }
+    if(document.getElementById("openProLoginBtn")){
+      document.getElementById("openProLoginBtn").onclick = ()=>openAuthModal("login");
+    }
+    if(document.getElementById("openProSignupBtn")){
+      document.getElementById("openProSignupBtn").onclick = ()=>openAuthModal("signup");
+    }
+
+    document.getElementById("saveProProfileBtn").onclick = async ()=>{
       const nm = document.getElementById("pName").value.trim();
       const ph = document.getElementById("pPhone").value.trim();
       if(!nm || !ph){ toast("يرجى إدخال الاسم ورقم الهاتف"); return; }
@@ -1101,7 +1341,19 @@ function render(){
       pro.price = document.getElementById("pPrice").value.trim() || "حسب العمل";
       pro.available = document.getElementById("pAvail").value === "true";
       pro.desc = document.getElementById("pDesc").value.trim();
-      saveDB(); toast("تم تحديث ملف الحرفي بنجاح"); render();
+      saveDB();
+      if(currentAuthUser && sbClient){
+        await sbClient.from("profiles").upsert({
+          id: currentAuthUser.id,
+          full_name: pro.name,
+          phone: pro.phone,
+          city: pro.city,
+          bio: pro.desc,
+          role: "pro",
+          is_active: currentAuthProfile?.is_active !== false
+        }, { onConflict: "id" });
+      }
+      toast("تم تحديث ملف الحرفي بنجاح"); render();
     };
   }
 
@@ -1157,6 +1409,7 @@ function render(){
     nav.append(b);
   });
 }
+initAuthListener();
 render();
 subscribeSupabaseRealtime();
 syncFromSupabase(true);
