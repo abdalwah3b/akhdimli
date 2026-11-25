@@ -325,6 +325,29 @@ let currentAuthUser = null;
 let currentAuthProfile = null;
 let authBannerMessage = "";
 
+function normalizePhone(n){
+  return (n || "").replace(/\D/g, "");
+}
+
+function getActiveOwnerKey(){
+  if(currentAuthUser?.id) return "uid:" + currentAuthUser.id;
+  const ph = normalizePhone(db.userProfile?.phone);
+  return ph ? "ph:" + ph : "guest";
+}
+
+function isOwnedByCurrentUser(record){
+  if(!record) return false;
+  if(currentAuthUser?.id){
+    if(record.userId && record.userId === currentAuthUser.id) return true;
+    const myPh = normalizePhone(db.userProfile?.phone);
+    if(!record.userId && myPh && normalizePhone(record.customerPhone) === myPh) return true;
+    return false;
+  }
+  const myPh = normalizePhone(db.userProfile?.phone);
+  if(myPh && normalizePhone(record.customerPhone) === myPh) return true;
+  return !record.userId && !record.customerPhone;
+}
+
 function initSupabaseClient(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase?.createClient) return null;
   if(!sbClient){
@@ -600,6 +623,7 @@ function mapOrderFromRow(r){
   return {
     id: Number(r.id),
     proId: Number(r.pro_id),
+    userId: r.user_id || "",
     customerName: r.customer_name,
     customerPhone: r.customer_phone,
     city: r.city || "",
@@ -616,7 +640,7 @@ function mapOrderFromRow(r){
 }
 
 function mapOrderToRow(o){
-  return {
+  const row = {
     id: Number(o.id),
     pro_id: Number(o.proId),
     customer_name: o.customerName,
@@ -632,12 +656,15 @@ function mapOrderToRow(o){
     rating_given: Number(o.ratingGiven ?? 0),
     review_text: o.reviewText || ""
   };
+  if(o.userId) row.user_id = o.userId;
+  return row;
 }
 
 function mapMsgFromRow(r){
   return {
     id: Number(r.id),
     proId: Number(r.pro_id),
+    userId: r.user_id || "",
     customerPhone: r.customer_phone,
     customerName: r.customer_name,
     sender: r.sender,
@@ -647,7 +674,7 @@ function mapMsgFromRow(r){
 }
 
 function mapMsgToRow(msg){
-  return {
+  const row = {
     id: Number(msg.id),
     pro_id: Number(msg.proId),
     customer_phone: msg.customerPhone,
@@ -656,6 +683,8 @@ function mapMsgToRow(msg){
     text: msg.text,
     time: msg.time
   };
+  if(msg.userId) row.user_id = msg.userId;
+  return row;
 }
 
 function mapReviewFromRow(r){
@@ -895,9 +924,6 @@ function intlPhone(n){
   if(n.startsWith("0")) n = "218" + n.slice(1);
   return n;
 }
-function waLink(ph, msg){
-  return "https://wa.me/" + intlPhone(ph) + (msg ? "?text=" + encodeURIComponent(msg) : "");
-}
 function nowTime(){
   const d = new Date();
   return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
@@ -908,7 +934,8 @@ function sendMsg({proId, customerPhone, customerName, sender, text}){
   db.messages.push({
     id: Date.now() + Math.floor(Math.random()*100),
     proId,
-    customerPhone: customerPhone || db.userProfile.phone || "0910000000",
+    userId: currentAuthUser?.id || "",
+    customerPhone: customerPhone || db.userProfile.phone || "",
     customerName: customerName || db.userProfile.name || "مستخدم",
     sender,
     text: clean,
@@ -1072,6 +1099,7 @@ function renderCards(m){
 function openOrderModal(pro){
   const ps = db.paymentSettings;
   const dlg = document.getElementById("dlg");
+  const hasAnyPay = ps.cashEnabled || ps.transferEnabled;
   const defaultMethod = ps.cashEnabled ? "نقدي" : (ps.transferEnabled ? "تحويل" : "نقدي");
 
   dlg.innerHTML = `
@@ -1087,18 +1115,24 @@ function openOrderModal(pro){
     <input type="date" id="mDate">
     <label>الميزانية المتوقعة (د.ل)</label>
     <input type="number" id="mAmount" value="50" min="10">
-    <label>طريقة الدفع</label>
-    <select id="mPayMethod">
-      ${ps.cashEnabled ? `<option value="نقدي" ${defaultMethod==="نقدي"?"selected":""}>دفع نقدي (كاش) عند الإتمام</option>` : ""}
-      ${ps.transferEnabled ? `<option value="تحويل" ${defaultMethod==="تحويل"?"selected":""}>تحويل / محفظة إلكترونية</option>` : ""}
-    </select>
-    <div id="transferBox" class="pay-box" style="display:none">
-      <div><b>الجهة:</b> ${ps.bankName}</div>
-      <div><b>رقم الحساب / المحفظة:</b> <code>${ps.accountNumber}</code></div>
-      <div><b>باسم:</b> ${ps.accountHolder}</div>
-      <label style="margin-top:8px">رقم مرجع التحويل (اختياري)</label>
-      <input id="mTransferRef" placeholder="مثال: REF-12345">
-    </div>
+    ${hasAnyPay ? `
+      <label>طريقة الدفع</label>
+      <select id="mPayMethod">
+        ${ps.cashEnabled ? `<option value="نقدي" ${defaultMethod==="نقدي"?"selected":""}>دفع نقدي (كاش) عند الإتمام</option>` : ""}
+        ${ps.transferEnabled ? `<option value="تحويل" ${defaultMethod==="تحويل"?"selected":""}>تحويل / محفظة إلكترونية</option>` : ""}
+      </select>
+      <div id="transferBox" class="pay-box" style="display:none">
+        <div><b>الجهة:</b> ${ps.bankName}</div>
+        <div><b>رقم الحساب / المحفظة:</b> <code>${ps.accountNumber}</code></div>
+        <div><b>باسم:</b> ${ps.accountHolder}</div>
+        <label style="margin-top:8px">رقم مرجع التحويل (اختياري)</label>
+        <input id="mTransferRef" placeholder="مثال: REF-12345">
+      </div>
+    ` : `
+      <div class="pay-box" style="border-color:var(--bad)">
+        <b style="color:var(--bad)">تنبيه:</b> طرق الدفع الإلكترونية/النقدية معطّلة حالياً من الإدارة، وسيتم الاتفاق على التسوية مباشرة مع الحرفي.
+      </div>
+    `}
     <div class="row" style="margin-top:16px">
       <button class="btn" id="mClose">إلغاء</button>
       <button class="btn main" id="mSend">تأكيد وإرسال</button>
@@ -1108,8 +1142,11 @@ function openOrderModal(pro){
 
   const paySel = document.getElementById("mPayMethod");
   const tBox = document.getElementById("transferBox");
-  const syncPayUI = ()=>{ tBox.style.display = paySel.value === "تحويل" ? "block" : "none"; };
-  paySel.onchange = syncPayUI;
+  const syncPayUI = ()=>{
+    if(!paySel || !tBox) return;
+    tBox.style.display = paySel.value === "تحويل" ? "block" : "none";
+  };
+  if(paySel) paySel.onchange = syncPayUI;
   syncPayUI();
 
   document.getElementById("mClose").onclick = ()=>dlg.close();
@@ -1119,15 +1156,26 @@ function openOrderModal(pro){
     const desc = document.getElementById("mDesc").value.trim();
     const date = document.getElementById("mDate").value;
     const amount = Number(document.getElementById("mAmount").value) || 50;
-    const paymentMethod = paySel.value;
+    const paymentMethod = paySel ? paySel.value : "نقدي";
     const transferRef = paymentMethod === "تحويل" ? (document.getElementById("mTransferRef")?.value.trim() || "") : "";
     if(!name || !phone || !desc){ toast("يرجى تعبئة الاسم والهاتف ووصف المشكلة"); return; }
     db.userProfile = {...db.userProfile, name, phone, city: pro.city};
     db.orders.push({
-      id: Date.now(), proId: pro.id, customerName: name,
-      customerPhone: phone, city: pro.city, desc, date, amount,
-      paymentMethod, transferRef, paid: false, status: "جديد",
-      ratingGiven: 0, reviewText: ""
+      id: Date.now(),
+      proId: pro.id,
+      userId: currentAuthUser?.id || "",
+      customerName: name,
+      customerPhone: phone,
+      city: pro.city,
+      desc,
+      date,
+      amount,
+      paymentMethod,
+      transferRef,
+      paid: false,
+      status: "جديد",
+      ratingGiven: 0,
+      reviewText: ""
     });
     const payNote = paymentMethod === "تحويل"
       ? " • الدفع: تحويل" + (transferRef ? " (مرجع: " + transferRef + ")" : "")
@@ -1149,6 +1197,9 @@ function render(){
   updateThemeIcon();
   const m = document.getElementById("main");
   m.innerHTML = "";
+
+  const myOrders = db.orders.filter(isOwnedByCurrentUser);
+  const myMessages = db.messages.filter(isOwnedByCurrentUser);
 
   if(authBannerMessage && !currentAuthUser){
     m.insertAdjacentHTML("beforeend",`
@@ -1211,8 +1262,8 @@ function render(){
       m.innerHTML = `<div class="empty"><b>لا يوجد حرفيون متاحون للمحادثة</b></div>`;
     } else {
       ui.activeProId = pro.id;
-      const myPhone = db.userProfile.phone || "0912345678";
-      const convMsgs = db.messages.filter(msg => msg.proId === pro.id && msg.customerPhone === myPhone);
+      const myPhone = db.userProfile.phone || "";
+      const convMsgs = myMessages.filter(msg => msg.proId === pro.id);
 
       m.innerHTML = `
         <div class="chat-box">
@@ -1269,10 +1320,10 @@ function render(){
   }
 
   if(ui.tab === "orders"){
-    if(!db.orders.length){
-      m.insertAdjacentHTML("beforeend",`<div class="empty"><b>لا توجد طلبات حالياً</b>اطلب خدمة من تبويب «الحرفيون» ليظهر طلبك هنا.</div>`);
+    if(!myOrders.length){
+      m.insertAdjacentHTML("beforeend",`<div class="empty"><b>لا توجد طلبات خاصة بحسابك حالياً</b>اطلب خدمة من تبويب «الحرفيون» ليظهر طلبك هنا.</div>`);
     } else {
-      [...db.orders].reverse().forEach(o=>{
+      [...myOrders].reverse().forEach(o=>{
         const p = getPro(o.proId);
         const cls = o.status === "مكتمل" ? "ok" : o.status === "ملغي" ? "bad" : "";
         const payLabel = o.paymentMethod === "تحويل"
@@ -1342,7 +1393,7 @@ function render(){
 
   if(ui.tab === "profile"){
     const up = db.userProfile;
-    const completedCount = db.orders.filter(o=>o.status==="مكتمل").length;
+    const completedCount = myOrders.filter(o=>o.status==="مكتمل").length;
     const isComplete = Boolean(up.name && up.phone && up.city);
 
     m.innerHTML = `
@@ -1373,9 +1424,9 @@ function render(){
           </div>
         </div>
         <div class="stats" style="margin:12px 0 0">
-          <div class="stat"><small>إجمالي الطلبات</small><b>${db.orders.length}</b></div>
+          <div class="stat"><small>طلبات حسابك</small><b>${myOrders.length}</b></div>
           <div class="stat"><small>الطلبات المكتملة</small><b>${completedCount}</b></div>
-          <div class="stat"><small>الرسائل المرسلة</small><b>${db.messages.filter(x=>x.sender==="user").length}</b></div>
+          <div class="stat"><small>رسائلك المرسلة</small><b>${myMessages.filter(x=>x.sender==="user").length}</b></div>
         </div>
       </div>
 
@@ -1433,8 +1484,8 @@ function render(){
     };
   }
 
-  const activeOrdersCnt = db.orders.filter(o=>o.status!=="مكتمل"&&o.status!=="ملغي").length;
-  const msgsCnt = db.messages.filter(x=>x.sender==="user").length;
+  const activeOrdersCnt = myOrders.filter(o=>o.status!=="مكتمل"&&o.status!=="ملغي").length;
+  const msgsCnt = myMessages.filter(x=>x.sender==="user").length;
   const nav = document.getElementById("nav");
   nav.innerHTML = "";
   [
