@@ -221,7 +221,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 
 <div id="adminLock" class="lock-screen" style="display:none">
   <h2 style="margin:0 0 6px">دخول لوحة الإدارة</h2>
-  <div class="sub">أدخل رمز الدخول للوصول إلى إدارة العمولات وطرق الدفع وطلبات السحب والحرفيين.</div>
+  <div class="sub">أدخل رمز الدخول للوصول إلى إدارة العمولات وطرق الدفع وطلبات السحب والحرفيين والمشتركين.</div>
   <label for="adminPassInput">رمز الدخول (PIN / كلمة المرور)</label>
   <input type="password" id="adminPassInput" placeholder="أدخل رمز الدخول..." autocomplete="current-password">
   <div class="lock-err" id="adminLockErr"></div>
@@ -340,6 +340,10 @@ let sbConnected = false;
 let sbSyncing = false;
 let sbReloadTimer = null;
 
+let subscribersList = [];
+let subscribersLoading = false;
+let subscribersError = "";
+
 function initSupabaseClient(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase?.createClient) return null;
   if(!sbClient){
@@ -348,6 +352,55 @@ function initSupabaseClient(){
     });
   }
   return sbClient;
+}
+
+async function fetchSubscribersList(){
+  const client = initSupabaseClient();
+  if(!client){
+    subscribersError = "تعذر تهيئة اتصال Supabase.";
+    return;
+  }
+  subscribersLoading = true;
+  subscribersError = "";
+  try{
+    const { data, error } = await client
+      .from("profiles")
+      .select("id, full_name, phone, city, role, is_active, created_at")
+      .order("created_at", { ascending: false });
+    if(error) throw error;
+    subscribersList = Array.isArray(data) ? data : [];
+  }catch(err){
+    subscribersError = err?.message || "تعذر جلب قائمة المشتركين (تحقق من سياسات RLS لجدول profiles).";
+  }finally{
+    subscribersLoading = false;
+  }
+}
+
+async function toggleSubscriberActive(subRow){
+  const client = initSupabaseClient();
+  if(!client || !subRow) return;
+  const nextActive = subRow.is_active === false ? true : false;
+  if(!nextActive){
+    const ok = await confirmAction({
+      title: "إيقاف حساب المشترك",
+      message: `هل أنت متأكد من إيقاف حساب <b>${subRow.full_name || "مشترك"}</b>؟ لن يتمكن من الدخول أو متابعة حسابه حتى إعادة التفعيل.`,
+      confirmText: "إيقاف الحساب",
+      danger: true
+    });
+    if(!ok) return;
+  }
+  try{
+    const { error } = await client
+      .from("profiles")
+      .update({ is_active: nextActive })
+      .eq("id", subRow.id);
+    if(error) throw error;
+    subRow.is_active = nextActive;
+    toast(nextActive ? "تم تفعيل حساب المشترك" : "تم إيقاف حساب المشترك");
+    render();
+  }catch(err){
+    toast(err?.message || "تعذر تحديث حالة الحساب");
+  }
 }
 
 function mapProFromRow(r){
@@ -635,10 +688,15 @@ function subscribeSupabaseRealtime(){
   const client = initSupabaseClient();
   if(!client || client._akhdimliRealtimeBound) return;
   client._akhdimliRealtimeBound = true;
-  const tables = ["app_settings","pros","join_requests","orders","messages","reviews","transactions","withdrawals"];
+  const tables = ["app_settings","pros","join_requests","orders","messages","reviews","transactions","withdrawals","profiles"];
   const ch = client.channel("akhdimli-live-db");
   tables.forEach(tbl => {
-    ch.on("postgres_changes", { event: "*", schema: "public", table: tbl }, ()=>{
+    ch.on("postgres_changes", { event: "*", schema: "public", table: tbl }, async ()=>{
+      if(tbl === "profiles" && isAdminUnlocked()){
+        await fetchSubscribersList();
+        if(ui.tab === "subscribers") render();
+        return;
+      }
       if(sbSyncing) return;
       clearTimeout(sbReloadTimer);
       sbReloadTimer = setTimeout(()=>syncFromSupabase(false), 180);
@@ -807,6 +865,7 @@ function bindAdminLockScreen(){
       setAdminUnlocked(true);
       if(errEl) errEl.textContent = "";
       toast("تم فتح لوحة الإدارة");
+      fetchSubscribersList().then(()=>render());
       render();
     } else {
       if(errEl) errEl.textContent = "رمز الدخول غير صحيح، حاول مرة أخرى.";
@@ -822,7 +881,7 @@ function bindAdminLockScreen(){
   return true;
 }
 
-const ui = { tab: "overview" };
+const ui = { tab: "overview", subFilter: "all", subQuery: "" };
 
 function render(){
   updateThemeIcon();
@@ -834,11 +893,14 @@ function render(){
   const grossVolume = completedOrders.reduce((s,o)=>s+(Number(o.amount)||0), 0);
   const platformRevenue = Math.round(grossVolume * (db.commissionRate / 100));
   const pendingWithdrawalsCnt = db.withdrawals.filter(w=>w.status==="قيد المراجعة").length;
+  const activeSubsCnt = subscribersList.filter(s=>s.is_active !== false).length;
+  const stoppedSubsCnt = subscribersList.filter(s=>s.is_active === false).length;
   const ps = db.paymentSettings;
 
   if(ui.tab === "overview"){
     m.innerHTML = `
       <div class="stats">
+        <div class="stat"><small>إجمالي المشتركين</small><b>${subscribersList.length}</b></div>
         <div class="stat"><small>الحرفيون المسجلون</small><b>${db.pros.length}</b></div>
         <div class="stat"><small>طلبات الانضمام المعلقة</small><b>${db.joinRequests.filter(j=>j.status==="قيد المراجعة").length}</b></div>
         <div class="stat"><small>طلبات السحب المعلقة</small><b>${pendingWithdrawalsCnt}</b></div>
@@ -891,6 +953,93 @@ function render(){
         accountHolder: document.getElementById("pHolder").value.trim()
       };
       saveDB(); toast("تم حفظ إعدادات الدفع"); render();
+    };
+  }
+
+  if(ui.tab === "subscribers"){
+    const usersCnt = subscribersList.filter(s => (s.role || "user") === "user").length;
+    const prosSubCnt = subscribersList.filter(s => s.role === "pro").length;
+
+    m.innerHTML = `
+      <div class="stats">
+        <div class="stat"><small>إجمالي المشتركين</small><b>${subscribersList.length}</b></div>
+        <div class="stat"><small>نشطون</small><b>${activeSubsCnt}</b></div>
+        <div class="stat"><small>موقوفون</small><b>${stoppedSubsCnt}</b></div>
+        <div class="stat"><small>مستخدم / حرفي</small><b>${usersCnt} / ${prosSubCnt}</b></div>
+      </div>
+
+      <div class="search-row">
+        <input type="search" id="subSearchInp" placeholder="ابحث بالاسم أو الهاتف أو المدينة..." value="${ui.subQuery}">
+        <select id="subFilterSel" aria-label="تصفية المشتركين">
+          <option value="all" ${ui.subFilter==="all"?"selected":""}>الكل</option>
+          <option value="active" ${ui.subFilter==="active"?"selected":""}>النشطون فقط</option>
+          <option value="stopped" ${ui.subFilter==="stopped"?"selected":""}>الموقوفون فقط</option>
+          <option value="user" ${ui.subFilter==="user"?"selected":""}>مستخدمون (user)</option>
+          <option value="pro" ${ui.subFilter==="pro"?"selected":""}>حرفيون (pro)</option>
+        </select>
+        <button type="button" class="btn sm" id="refreshSubsBtn">تحديث</button>
+      </div>
+    `;
+
+    if(subscribersError){
+      m.insertAdjacentHTML("beforeend",`
+        <div class="card" style="border-color:var(--bad)">
+          <b style="color:var(--bad)">ملاحظة حول قراءة المشتركين</b>
+          <div class="sub" style="margin-top:4px">${subscribersError}</div>
+        </div>
+      `);
+    }
+
+    const q = ui.subQuery.trim().toLowerCase();
+    const filteredSubs = subscribersList.filter(s => {
+      const isAct = s.is_active !== false;
+      const role = s.role || "user";
+      if(ui.subFilter === "active" && !isAct) return false;
+      if(ui.subFilter === "stopped" && isAct) return false;
+      if(ui.subFilter === "user" && role !== "user") return false;
+      if(ui.subFilter === "pro" && role !== "pro") return false;
+      if(!q) return true;
+      const hay = `${s.full_name || ""} ${s.phone || ""} ${s.city || ""} ${role}`.toLowerCase();
+      return hay.includes(q);
+    });
+
+    if(subscribersLoading && !subscribersList.length){
+      m.insertAdjacentHTML("beforeend",`<div class="empty"><b>جاري تحميل المشتركين...</b></div>`);
+    } else if(!filteredSubs.length){
+      m.insertAdjacentHTML("beforeend",`<div class="empty"><b>لا يوجد مشتركين مطابقون</b></div>`);
+    } else {
+      filteredSubs.forEach(s => {
+        const isAct = s.is_active !== false;
+        const roleLabel = s.role === "pro" ? "حرفي" : "مستخدم";
+        const dateStr = s.created_at ? String(s.created_at).slice(0,10) : "";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="top">
+            <div class="av">${svgIcon("user", 24)}</div>
+            <div>
+              <h3>${s.full_name || "مشترك بدون اسم"} <span class="badge">${roleLabel}</span></h3>
+              <div class="sub">${s.city || "بدون مدينة"} • هاتف: ${s.phone || "—"} ${dateStr ? "• " + dateStr : ""}</div>
+            </div>
+            <span class="badge ${isAct ? "ok" : "bad"}" style="margin-inline-start:auto">${isAct ? "نشط" : "موقوف"}</span>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button type="button" class="btn ${isAct ? "bad" : "main"} sm" data-subtog="${s.id}">
+              ${isAct ? "إيقاف الحساب" : "تفعيل الحساب"}
+            </button>
+          </div>
+        `;
+        card.querySelector("[data-subtog]").onclick = ()=>toggleSubscriberActive(s);
+        m.append(card);
+      });
+    }
+
+    document.getElementById("subSearchInp").oninput = e => { ui.subQuery = e.target.value; render(); };
+    document.getElementById("subFilterSel").onchange = e => { ui.subFilter = e.target.value; render(); };
+    document.getElementById("refreshSubsBtn").onclick = async ()=>{
+      toast("جاري تحديث قائمة المشتركين...");
+      await fetchSubscribersList();
+      render();
     };
   }
 
@@ -1065,6 +1214,7 @@ function render(){
   nav.innerHTML = "";
   [
     ["overview","chart","الإحصائيات",0],
+    ["subscribers","user","المشتركين",subscribersList.length],
     ["withdrawals","wallet","السحب",pendingWithdrawalsCnt],
     ["requests","briefcase","الانضمام",pendingReqsCnt],
     ["pros","wrench","الحرفيون",0]
@@ -1072,11 +1222,17 @@ function render(){
     const b = document.createElement("button");
     b.innerHTML = `${cnt>0?`<span class="nav-cnt">${cnt}</span>`:""}${svgIcon(ic,22)}${l}`;
     if(ui.tab === k) b.setAttribute("aria-current","page");
-    b.onclick = ()=>{ ui.tab = k; render(); window.scrollTo(0,0); };
+    b.onclick = async ()=>{
+      ui.tab = k;
+      if(k === "subscribers") await fetchSubscribersList();
+      render();
+      window.scrollTo(0,0);
+    };
     nav.append(b);
   });
 }
 render();
 subscribeSupabaseRealtime();
 syncFromSupabase(true);
+if(isAdminUnlocked()) fetchSubscribersList().then(()=>render());
 </script></body></html>
