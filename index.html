@@ -4,25 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B6B76">
-<title>اخدملي — تطبيق المستخدم</title>
+<title>اخدملي — خدمات المنزل والحرفيين</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#EEF4F4;--card:#fff;--ink:#12292D;--mut:#5B7276;
   --pri:#0B6B76;--pri2:#095560;--on:#fff;--acc:#F59E0B;
-  --line:#D5E2E3;--ok:#157347;--bad:#B3261E;--adm:#1E293B;
+  --line:#D5E2E3;--ok:#157347;--bad:#B3261E;
 }
 @media(prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0D1C1F;--card:#15292D;--ink:#E7F1F2;--mut:#93ABAF;
     --pri:#2BB3C0;--pri2:#5CCAD5;--on:#06262A;--line:#254247;
-    --ok:#5BD48A;--bad:#FF8A80;--adm:#334155;
+    --ok:#5BD48A;--bad:#FF8A80;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0D1C1F;--card:#15292D;--ink:#E7F1F2;--mut:#93ABAF;
   --pri:#2BB3C0;--pri2:#5CCAD5;--on:#06262A;--line:#254247;
-  --ok:#5BD48A;--bad:#FF8A80;--adm:#334155;
+  --ok:#5BD48A;--bad:#FF8A80;
 }
 *{box-sizing:border-box}
 body{
@@ -51,22 +51,33 @@ body{
   display:grid;place-items:center;cursor:pointer;flex:none;padding:0;
 }
 main{max-width:680px;margin:0 auto;padding:14px 16px 20px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-.stat small{color:var(--mut);font-size:12.5px;display:block}
-.stat b{font-size:22px;font-weight:800;line-height:1.3}
+.search{position:relative}
+.search input{
+  width:100%;font:inherit;color:var(--ink);background:var(--card);
+  border:1.5px solid var(--line);border-radius:14px;
+  padding:11px 42px 11px 14px;outline:none;
+}
+.search input:focus{border-color:var(--pri)}
+.search .s-ic{position:absolute;inset-inline-start:13px;top:50%;transform:translateY(-50%);color:var(--mut);display:flex}
+.cats{display:flex;gap:8px;overflow-x:auto;padding:12px 0 6px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{
+  flex:none;display:inline-flex;align-items:center;gap:6px;
+  border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:999px;padding:7px 14px;font:inherit;font-size:13.5px;
+  font-weight:700;cursor:pointer;white-space:nowrap;
+}
+.cat[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:var(--on)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
 .top{display:flex;gap:12px;align-items:center}
 .av{
-  width:48px;height:48px;border-radius:50%;
+  width:52px;height:52px;border-radius:50%;
   background:color-mix(in srgb,var(--pri) 15%,var(--card));
   color:var(--pri2);display:grid;place-items:center;flex:none;
 }
 .top h3{margin:0;font-size:16.5px;font-weight:800;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.ver-ic{color:var(--pri2);display:inline-flex;align-items:center}
 .sub{color:var(--mut);font-size:13px}
-.rate{margin-inline-start:auto;font-weight:800;font-size:14px;white-space:nowrap}
-.rate b{color:var(--acc)}
+.rating{color:var(--acc);font-weight:800}
 .desc{margin:10px 0 12px;font-size:14.5px}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .btn{
@@ -75,57 +86,22 @@ main{max-width:680px;margin:0 auto;padding:14px 16px 20px}
   border:1.5px solid var(--pri);color:var(--pri2);background:transparent;cursor:pointer;
 }
 .btn.main{background:var(--pri);color:var(--on)}
-.btn.adm{background:var(--adm);border-color:var(--adm);color:#fff}
-.btn.ok{border-color:var(--ok);color:var(--ok)}
 .btn.bad{border-color:var(--bad);color:var(--bad)}
 .btn.sm{flex:0 0 auto;min-width:auto;padding:6px 11px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .badge{
   font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;
   background:color-mix(in srgb,var(--acc) 22%,var(--card));white-space:nowrap;
 }
 .badge.ok{background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ok)}
 .badge.bad{background:color-mix(in srgb,var(--bad) 18%,var(--card));color:var(--bad)}
-.pay-box{
-  background:color-mix(in srgb,var(--pri) 8%,var(--card));
-  border:1px dashed var(--pri);border-radius:12px;padding:11px 12px;margin-top:10px;font-size:13.5px;
-}
-.search-row{display:flex;gap:8px;margin-bottom:10px}
 input,textarea,select{
   width:100%;font:inherit;color:var(--ink);background:var(--card);
   border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;
 }
-.search-row select{width:auto;min-width:130px;flex:none}
 label{display:block;font-weight:700;font-size:13.5px;margin:10px 0 4px}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
-.chip{
-  flex:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
-  border-radius:999px;padding:5px 13px;font:inherit;font-size:13.5px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:6px;
-}
-.chip[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:var(--on)}
-.hero{
-  background:linear-gradient(135deg,#0B6B76,#09444D);color:#fff;
-  border-radius:18px;padding:18px;margin-bottom:12px;
-}
-.hero b{display:block;font-size:30px;font-weight:800;line-height:1.25}
 .empty{text-align:center;color:var(--mut);padding:36px 16px}
 .empty b{display:block;color:var(--ink);font-size:16.5px;margin-bottom:4px}
-
-.stars-picker{display:flex;gap:6px;margin:8px 0}
-.star-btn{
-  border:1.5px solid var(--line);background:var(--card);color:var(--mut);
-  border-radius:10px;padding:6px 12px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;
-}
-.star-btn.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,var(--card));color:var(--acc)}
-.review-item{
-  border-top:1px solid var(--line);padding-top:8px;margin-top:8px;font-size:13.5px;
-}
-.tx-row{
-  display:flex;justify-content:space-between;align-items:center;gap:8px;
-  padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;
-}
-.tx-row:last-child{border-bottom:0}
-
 .chat-box{
   background:var(--card);border:1px solid var(--line);border-radius:16px;
   display:flex;flex-direction:column;height:calc(100vh - 185px);min-height:360px;overflow:hidden;
@@ -156,11 +132,9 @@ label{display:block;font-weight:700;font-size:13.5px;margin:10px 0 4px}
   display:flex;gap:8px;align-items:center;
 }
 .chat-form input{flex:1;padding:9px 12px}
-
 .auth-tabs{display:flex;gap:8px;margin-bottom:12px}
 .auth-tabs button{flex:1}
 .auth-err{color:var(--bad);font-size:13px;font-weight:700;margin-top:8px;min-height:20px}
-
 nav{
   position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--card);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;
@@ -205,7 +179,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       </div>
       <div>
         <b>اخدملي</b>
-        <small>حرفيّك قريب منك</small>
+        <small>خدمات المنزل والحرفيين</small>
       </div>
     </div>
     <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تغيير المظهر" aria-label="تغيير المظهر"></button>
@@ -218,11 +192,11 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const STORAGE_KEY = "akhdimli_shared_db_v6";
-const SPECS = ["الكل","سباكة","كهرباء","نجارة","دهان","تكييف","بناء","حدادة","ألمنيوم","تنظيف"];
-const SEED_DEMO_DATA = false; // اجعلها true فقط عند الرغبة في تعبئة بيانات تجريبية أولية لقاعدة فارغة
+const SPECS = ["سباكة","كهرباء","نجارة","دهان","تكييف","بناء","حدادة","ألمنيوم","تنظيف"];
 
 const P = {
-  grid:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L3 17.7V21h3.3l6.3-6.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
   bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   hammer:'<path d="M14 4.5l5.5 5.5-2.2 2.2-5.5-5.5z"/><path d="M12.3 8L4 16.3 7.7 20 16 11.7"/>',
@@ -232,22 +206,17 @@ const P = {
   flame:'<path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.5 1 2 1.5 2C10 8 11 5.5 12 3z"/>',
   window:'<rect x="4" y="3" width="16" height="18" rx="1.8"/><path d="M12 3v18M4 12h16"/>',
   sparkle:'<path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
-  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
-  clipboard:'<rect x="5" y="4" width="14" height="17" rx="2.2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>',
-  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
-  briefcase:'<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
-  inbox:'<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
-  wallet:'<rect x="3" y="6" width="18" height="14" rx="2.6"/><path d="M3 10h18M16 15h2"/>',
-  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  home:'<path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/>',
   chat:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
   send:'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
-  verified:'<path d="M12 2l2.4 2.4 3.4-.5.5 3.4L20.7 10l-1.5 3.1.5 3.4-3.4.5L13.9 19.4 12 18l-1.9 1.4-2.4-2.4-3.4-.5.5-3.4L3.3 10l2.4-2.7.5-3.4 3.4.5z"/><path d="M9 12l2 2 4-4"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
   moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
 };
 
 const ICK = {
-  "الكل":"grid","سباكة":"wrench","كهرباء":"bolt","نجارة":"hammer","دهان":"roller",
+  "سباكة":"wrench","كهرباء":"bolt","نجارة":"hammer","دهان":"roller",
   "تكييف":"snow","بناء":"brick","حدادة":"flame","ألمنيوم":"window","تنظيف":"sparkle"
 };
 
@@ -314,66 +283,39 @@ let authBannerMessage = "";
 
 let hasInitialSyncCompleted = false;
 let seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
-let seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), String(o.status || "")]));
+let seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), o.status]));
 let unreadIncomingMsgs = 0;
+let unreadOrderUpdates = 0;
+
+const ui = { tab: "home", spec: "الكل", q: "", activeChatProId: 1 };
 
 function normalizePhone(n){
   return (n || "").replace(/\D/g, "");
 }
 
-function isOwnedByCurrentUser(record){
-  if(!record) return false;
-  if(currentAuthUser?.id){
-    if(record.userId && record.userId === currentAuthUser.id) return true;
-    const myPh = normalizePhone(db.userProfile?.phone);
-    if(!record.userId && myPh && normalizePhone(record.customerPhone) === myPh) return true;
-    return false;
-  }
-  const myPh = normalizePhone(db.userProfile?.phone);
-  if(myPh && normalizePhone(record.customerPhone) === myPh) return true;
-  return !record.userId && !record.customerPhone;
+function nowTime(){
+  const d = new Date();
+  return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
 }
 
-function notifyIncomingUpdates(prevOrders, prevMessages){
-  if(!hasInitialSyncCompleted){
-    seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
-    seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), String(o.status || "")]));
-    hasInitialSyncCompleted = true;
-    return;
-  }
-
-  let newProMsgCount = 0;
-  let lastProName = "";
-  (db.messages || []).forEach(msg => {
-    const mid = Number(msg.id);
-    if(!seenMsgIds.has(mid)){
-      seenMsgIds.add(mid);
-      if(msg.sender === "pro" && isOwnedByCurrentUser(msg)){
-        newProMsgCount++;
-        lastProName = getPro(msg.proId).name;
-      }
-    }
-  });
-
-  if(newProMsgCount > 0){
-    if(ui.tab !== "chat"){
-      unreadIncomingMsgs += newProMsgCount;
-    }
-    toast(newProMsgCount === 1
-      ? `رسالة جديدة من ${lastProName || "الحرفي"}`
-      : `وصلك ${newProMsgCount} رسائل جديدة من الحرفيين`);
-  }
-
-  const prevMap = new Map((prevOrders || []).map(o => [Number(o.id), String(o.status || "")]));
-  (db.orders || []).forEach(o => {
-    const oid = Number(o.id);
-    const curStatus = String(o.status || "");
-    const oldStatus = seenOrderStatuses.has(oid) ? seenOrderStatuses.get(oid) : prevMap.get(oid);
-    seenOrderStatuses.set(oid, curStatus);
-    if(isOwnedByCurrentUser(o) && oldStatus !== undefined && oldStatus !== curStatus){
-      toast(`تحديث حالة الطلب مع ${getPro(o.proId).name}: ${curStatus}`);
-    }
-  });
+let themeMode = "auto";
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("on"), 2800);
+}
+function updateThemeIcon(){
+  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
+  document.getElementById("themeBtn").innerHTML = svgIcon(isDark ? "sun" : "moon", 18);
+}
+function toggleTheme(){
+  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
+  themeMode = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", themeMode);
+  updateThemeIcon();
 }
 
 function initSupabaseClient(){
@@ -399,22 +341,19 @@ async function ensureUserProfileAndStatus(user){
 
     if(!prof){
       const meta = user.user_metadata || {};
-      const fallbackName = meta.full_name || db.userProfile?.name || user.email?.split("@")[0] || "مستخدم";
-      const { data: inserted, error: insErr } = await client
+      const { data: inserted } = await client
         .from("profiles")
         .upsert({
           id: user.id,
-          full_name: fallbackName,
-          phone: meta.phone || db.userProfile?.phone || "",
-          city: meta.city || db.userProfile?.city || "",
-          address: db.userProfile?.address || "",
-          bio: db.userProfile?.bio || "",
+          full_name: meta.full_name || db.userProfile.name || user.email?.split("@")[0] || "مستخدم",
+          phone: meta.phone || db.userProfile.phone || "",
+          city: meta.city || db.userProfile.city || "البيضاء",
           role: "user",
           is_active: true
         }, { onConflict: "id" })
         .select("*")
         .maybeSingle();
-      if(!insErr && inserted) prof = inserted;
+      if(inserted) prof = inserted;
     }
 
     if(prof && prof.is_active === false){
@@ -430,17 +369,10 @@ async function ensureUserProfileAndStatus(user){
     currentAuthProfile = prof || { id: user.id, full_name: user.user_metadata?.full_name || "", is_active: true, role: "user" };
     authBannerMessage = "";
 
-    if(prof){
-      db.userProfile = {
-        ...db.userProfile,
-        name: prof.full_name || db.userProfile.name,
-        phone: prof.phone || db.userProfile.phone,
-        city: prof.city || db.userProfile.city,
-        address: prof.address ?? db.userProfile.address ?? "",
-        bio: prof.bio ?? db.userProfile.bio ?? ""
-      };
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
-    }
+    if(currentAuthProfile.full_name) db.userProfile.name = currentAuthProfile.full_name;
+    if(currentAuthProfile.phone) db.userProfile.phone = currentAuthProfile.phone;
+    if(currentAuthProfile.city) db.userProfile.city = currentAuthProfile.city;
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
     return currentAuthProfile;
   }catch(e){
     console.warn("User profile check warning:", e?.message || e);
@@ -476,25 +408,24 @@ function initAuthListener(){
 function openAuthModal(initialMode = "login"){
   const client = initSupabaseClient();
   if(!client){ toast("تعذر الاتصال بخدمة المصادقة"); return; }
-
   let mode = initialMode;
   const dlg = document.getElementById("dlg");
 
   const paint = ()=>{
     dlg.innerHTML = `
       <h2 style="margin:0 0 4px">${mode === "login" ? "تسجيل دخول المستخدم" : "إنشاء حساب مستخدم"}</h2>
-      <div class="sub">احفظ ملفك وتابع طلباتك ومحادثاتك عبر أجهزتك.</div>
+      <div class="sub">احفظ بياناتك وتابع طلباتك ومحادثاتك مع الحرفيين.</div>
       <div class="auth-tabs" style="margin-top:12px">
         <button type="button" class="btn sm ${mode==="login"?"main":""}" id="mTabLogin">تسجيل دخول</button>
         <button type="button" class="btn sm ${mode==="signup"?"main":""}" id="mTabSignup">حساب جديد</button>
       </div>
       ${mode === "signup" ? `
         <label>الاسم الكامل</label>
-        <input id="authName" value="${db.userProfile?.name || ""}" placeholder="الاسم الثلاثي">
-        <label>رقم الهاتف (اختياري)</label>
-        <input id="authPhone" value="${db.userProfile?.phone || ""}" placeholder="091...">
-        <label>المدينة (اختياري)</label>
-        <input id="authCity" value="${db.userProfile?.city || ""}" placeholder="البيضاء">
+        <input id="authName" value="${db.userProfile.name||""}" placeholder="مثال: عبدالوهاب">
+        <label>رقم الهاتف</label>
+        <input id="authPhone" value="${db.userProfile.phone||""}" placeholder="091...">
+        <label>المدينة</label>
+        <input id="authCity" value="${db.userProfile.city||"البيضاء"}">
       ` : ""}
       <label>البريد الإلكتروني</label>
       <input type="email" id="authEmail" placeholder="name@example.com" autocomplete="email">
@@ -506,7 +437,6 @@ function openAuthModal(initialMode = "login"){
         <button type="button" class="btn main" id="authSubmit">${mode === "login" ? "دخول" : "إنشاء الحساب"}</button>
       </div>
     `;
-
     document.getElementById("mTabLogin").onclick = ()=>{ mode = "login"; paint(); };
     document.getElementById("mTabSignup").onclick = ()=>{ mode = "signup"; paint(); };
     document.getElementById("authCancel").onclick = ()=>dlg.close();
@@ -538,7 +468,7 @@ function openAuthModal(initialMode = "login"){
         } else {
           const fullName = (document.getElementById("authName")?.value || "").trim();
           const phone = (document.getElementById("authPhone")?.value || "").trim();
-          const city = (document.getElementById("authCity")?.value || "").trim();
+          const city = (document.getElementById("authCity")?.value || "البيضاء").trim();
           const { data, error } = await client.auth.signUp({
             email,
             password,
@@ -548,9 +478,9 @@ function openAuthModal(initialMode = "login"){
           if(data.user && data.session){
             await client.from("profiles").upsert({
               id: data.user.id,
-              full_name: fullName || db.userProfile?.name || "",
-              phone: phone || db.userProfile?.phone || "",
-              city: city || db.userProfile?.city || "",
+              full_name: fullName || "مستخدم",
+              phone,
+              city,
               role: "user",
               is_active: true
             }, { onConflict: "id" });
@@ -578,9 +508,7 @@ function openAuthModal(initialMode = "login"){
 
 async function logoutUser(){
   const client = initSupabaseClient();
-  if(client){
-    await client.auth.signOut();
-  }
+  if(client) await client.auth.signOut();
   currentAuthUser = null;
   currentAuthProfile = null;
   toast("تم تسجيل الخروج");
@@ -589,212 +517,154 @@ async function logoutUser(){
 
 function mapProFromRow(r){
   return {
-    id: Number(r.id),
-    name: r.name,
-    spec: r.spec,
-    city: r.city,
-    phone: r.phone,
-    price: r.price || "حسب العمل",
-    desc: r.desc || "",
-    rating: Number(r.rating ?? 5.0),
-    jobs: Number(r.jobs ?? 0),
-    verified: Boolean(r.verified),
-    active: r.active !== false,
-    available: r.available !== false,
-    balance: Number(r.balance ?? 0)
+    id:Number(r.id),name:r.name,spec:r.spec,city:r.city,phone:r.phone,
+    price:r.price||"حسب العمل",desc:r.desc||"",rating:Number(r.rating??5.0),
+    jobs:Number(r.jobs??0),verified:Boolean(r.verified),active:r.active!==false,
+    available:r.available!==false,balance:Number(r.balance??0)
   };
 }
-
 function mapProToRow(p){
   return {
-    id: Number(p.id),
-    name: p.name,
-    spec: p.spec,
-    city: p.city,
-    phone: p.phone,
-    price: p.price || "حسب العمل",
-    desc: p.desc || "",
-    rating: Number(p.rating ?? 5.0),
-    jobs: Number(p.jobs ?? 0),
-    verified: Boolean(p.verified),
-    active: p.active !== false,
-    available: p.available !== false,
-    balance: Number(p.balance ?? 0)
+    id:Number(p.id),name:p.name,spec:p.spec,city:p.city,phone:p.phone,
+    price:p.price||"حسب العمل",desc:p.desc||"",rating:Number(p.rating??5.0),
+    jobs:Number(p.jobs??0),verified:Boolean(p.verified),active:p.active!==false,
+    available:p.available!==false,balance:Number(p.balance??0)
   };
 }
-
 function mapJoinFromRow(r){
   return {
-    id: Number(r.id),
-    name: r.name,
-    spec: r.spec,
-    city: r.city,
-    phone: r.phone,
-    desc: r.desc || "",
-    status: r.status || "قيد المراجعة"
+    id:Number(r.id),name:r.name,spec:r.spec,city:r.city,phone:r.phone,
+    desc:r.desc||"",status:r.status||"قيد المراجعة"
   };
 }
-
 function mapJoinToRow(j){
   return {
-    id: Number(j.id),
-    name: j.name,
-    spec: j.spec,
-    city: j.city,
-    phone: j.phone,
-    desc: j.desc || "",
-    status: j.status || "قيد المراجعة"
+    id:Number(j.id),name:j.name,spec:j.spec,city:j.city,phone:j.phone,
+    desc:j.desc||"",status:j.status||"قيد المراجعة"
   };
 }
-
 function mapOrderFromRow(r){
   return {
-    id: Number(r.id),
-    proId: Number(r.pro_id),
-    userId: r.user_id || "",
-    customerName: r.customer_name,
-    customerPhone: r.customer_phone,
-    city: r.city || "",
-    desc: r.desc,
-    date: r.date || "",
-    amount: Number(r.amount ?? 50),
-    paymentMethod: r.payment_method || "نقدي",
-    transferRef: r.transfer_ref || "",
-    paid: Boolean(r.paid),
-    status: r.status || "جديد",
-    ratingGiven: Number(r.rating_given ?? 0),
-    reviewText: r.review_text || ""
+    id:Number(r.id),proId:Number(r.pro_id),userId:r.user_id||"",
+    customerName:r.customer_name,customerPhone:r.customer_phone,city:r.city||"",
+    desc:r.desc,date:r.date||"",amount:Number(r.amount??50),
+    paymentMethod:r.payment_method||"نقدي",transferRef:r.transfer_ref||"",
+    paid:Boolean(r.paid),status:r.status||"جديد",
+    ratingGiven:Number(r.rating_given??0),reviewText:r.review_text||""
   };
 }
-
 function mapOrderToRow(o){
   const row = {
-    id: Number(o.id),
-    pro_id: Number(o.proId),
-    customer_name: o.customerName,
-    customer_phone: o.customerPhone,
-    city: o.city || "",
-    desc: o.desc,
-    date: o.date || "",
-    amount: Number(o.amount ?? 50),
-    payment_method: o.paymentMethod || "نقدي",
-    transfer_ref: o.transferRef || "",
-    paid: Boolean(o.paid),
-    status: o.status || "جديد",
-    rating_given: Number(o.ratingGiven ?? 0),
-    review_text: o.reviewText || ""
+    id:Number(o.id),pro_id:Number(o.proId),customer_name:o.customerName,
+    customer_phone:o.customerPhone,city:o.city||"",desc:o.desc,date:o.date||"",
+    amount:Number(o.amount??50),payment_method:o.paymentMethod||"نقدي",
+    transfer_ref:o.transferRef||"",paid:Boolean(o.paid),status:o.status||"جديد",
+    rating_given:Number(o.ratingGiven??0),review_text:o.reviewText||""
   };
   if(o.userId) row.user_id = o.userId;
   return row;
 }
-
 function mapMsgFromRow(r){
   return {
-    id: Number(r.id),
-    proId: Number(r.pro_id),
-    userId: r.user_id || "",
-    customerPhone: r.customer_phone,
-    customerName: r.customer_name,
-    sender: r.sender,
-    text: r.text,
-    time: r.time
+    id:Number(r.id),proId:Number(r.pro_id),userId:r.user_id||"",
+    customerPhone:r.customer_phone,customerName:r.customer_name,
+    sender:r.sender,text:r.text,time:r.time
   };
 }
-
 function mapMsgToRow(msg){
   const row = {
-    id: Number(msg.id),
-    pro_id: Number(msg.proId),
-    customer_phone: msg.customerPhone,
-    customer_name: msg.customerName,
-    sender: msg.sender,
-    text: msg.text,
-    time: msg.time
+    id:Number(msg.id),pro_id:Number(msg.proId),customer_phone:msg.customerPhone,
+    customer_name:msg.customerName,sender:msg.sender,text:msg.text,time:msg.time
   };
   if(msg.userId) row.user_id = msg.userId;
   return row;
 }
-
 function mapReviewFromRow(r){
   return {
-    id: Number(r.id),
-    proId: Number(r.pro_id),
-    customerName: r.customer_name,
-    stars: Number(r.stars ?? 5),
-    comment: r.comment || "",
-    date: r.date || ""
+    id:Number(r.id),proId:Number(r.pro_id),customerName:r.customer_name,
+    stars:Number(r.stars??5),comment:r.comment||"",date:r.date||""
   };
 }
-
 function mapReviewToRow(rev){
   return {
-    id: Number(rev.id),
-    pro_id: Number(rev.proId),
-    customer_name: rev.customerName,
-    stars: Number(rev.stars ?? 5),
-    comment: rev.comment || "",
-    date: rev.date || ""
+    id:Number(rev.id),pro_id:Number(rev.proId),customer_name:rev.customerName,
+    stars:Number(rev.stars??5),comment:rev.comment||"",date:rev.date||""
   };
 }
-
 function mapTxFromRow(r){
   return {
-    id: Number(r.id),
-    proId: Number(r.pro_id),
-    title: r.title,
-    amount: Number(r.amount ?? 0),
-    type: r.type,
-    time: r.time
+    id:Number(r.id),proId:Number(r.pro_id),title:r.title,
+    amount:Number(r.amount??0),type:r.type,time:r.time
   };
 }
-
 function mapTxToRow(tx){
   return {
-    id: Number(tx.id),
-    pro_id: Number(tx.proId),
-    title: tx.title,
-    amount: Number(tx.amount ?? 0),
-    type: tx.type,
-    time: tx.time
+    id:Number(tx.id),pro_id:Number(tx.proId),title:tx.title,
+    amount:Number(tx.amount??0),type:tx.type,time:tx.time
   };
 }
-
 function mapWdFromRow(r){
   return {
-    id: Number(r.id),
-    proId: Number(r.pro_id),
-    proName: r.pro_name,
-    phone: r.phone || "",
-    amount: Number(r.amount ?? 0),
-    status: r.status || "قيد المراجعة",
-    time: r.time
+    id:Number(r.id),proId:Number(r.pro_id),proName:r.pro_name,phone:r.phone||"",
+    amount:Number(r.amount??0),status:r.status||"قيد المراجعة",time:r.time
   };
 }
-
 function mapWdToRow(w){
   return {
-    id: Number(w.id),
-    pro_id: Number(w.proId),
-    pro_name: w.proName,
-    phone: w.phone || "",
-    amount: Number(w.amount ?? 0),
-    status: w.status || "قيد المراجعة",
-    time: w.time
+    id:Number(w.id),pro_id:Number(w.proId),pro_name:w.proName,phone:w.phone||"",
+    amount:Number(w.amount??0),status:w.status||"قيد المراجعة",time:w.time
   };
 }
 
-async function seedInitialCloudIfEmpty(client){
-  if(!SEED_DEMO_DATA) return;
-  const { data: existingPros, error: pErr } = await client.from("pros").select("id").limit(1);
-  if(pErr || (existingPros && existingPros.length > 0)) return;
-  await client.from("pros").upsert(DEFAULT_DATA.pros.map(mapProToRow), { onConflict: "id" });
+function notifyUserIncomingUpdates(){
+  if(!hasInitialSyncCompleted){
+    seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
+    seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), o.status]));
+    hasInitialSyncCompleted = true;
+    return;
+  }
+
+  let newProMsgs = 0;
+  let lastProName = "";
+  (db.messages || []).forEach(msg => {
+    const mid = Number(msg.id);
+    if(!seenMsgIds.has(mid)){
+      seenMsgIds.add(mid);
+      if(msg.sender === "pro"){
+        newProMsgs++;
+        const pr = db.pros.find(p => Number(p.id) === Number(msg.proId));
+        lastProName = pr?.name || "حرفي";
+      }
+    }
+  });
+
+  if(newProMsgs > 0){
+    if(ui.tab !== "chat") unreadIncomingMsgs += newProMsgs;
+    toast(newProMsgs === 1
+      ? `رد جديد من ${lastProName}`
+      : `وصلك ${newProMsgs} ردود جديدة من الحرفيين`);
+  }
+
+  let statusChanges = 0;
+  (db.orders || []).forEach(o => {
+    const oid = Number(o.id);
+    const prevStatus = seenOrderStatuses.get(oid);
+    if(prevStatus !== undefined && prevStatus !== o.status){
+      statusChanges++;
+    }
+    seenOrderStatuses.set(oid, o.status);
+  });
+
+  if(statusChanges > 0){
+    if(ui.tab !== "orders") unreadOrderUpdates += statusChanges;
+    toast("تم تحديث حالة أحد طلباتك");
+  }
 }
 
 async function syncFromSupabase(showToastOnConnect=false){
   const client = initSupabaseClient();
   if(!client) return false;
   try{
-    await seedInitialCloudIfEmpty(client);
     const [sRes, pRes, jRes, oRes, mRes, rRes, tRes, wRes] = await Promise.all([
       client.from("app_settings").select("*").eq("id", 1).maybeSingle(),
       client.from("pros").select("*").order("id", { ascending: true }),
@@ -807,8 +677,6 @@ async function syncFromSupabase(showToastOnConnect=false){
     ]);
     if(pRes.error) throw pRes.error;
 
-    const prevOrders = db.orders || [];
-    const prevMessages = db.messages || [];
     const next = loadDB();
     if(sRes.data){
       next.commissionRate = Number(sRes.data.commission_rate ?? next.commissionRate);
@@ -820,7 +688,7 @@ async function syncFromSupabase(showToastOnConnect=false){
         accountHolder: sRes.data.account_holder || next.paymentSettings.accountHolder
       };
     }
-    if(Array.isArray(pRes.data)) next.pros = pRes.data.map(mapProFromRow);
+    if(Array.isArray(pRes.data) && pRes.data.length) next.pros = pRes.data.map(mapProFromRow);
     if(Array.isArray(jRes.data)) next.joinRequests = jRes.data.map(mapJoinFromRow);
     if(Array.isArray(oRes.data)) next.orders = oRes.data.map(mapOrderFromRow);
     if(Array.isArray(mRes.data)) next.messages = mRes.data.map(mapMsgFromRow);
@@ -830,25 +698,15 @@ async function syncFromSupabase(showToastOnConnect=false){
 
     db = next;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
-    notifyIncomingUpdates(prevOrders, prevMessages);
+    notifyUserIncomingUpdates();
     const firstConnect = !sbConnected;
     sbConnected = true;
     render();
     if(showToastOnConnect && firstConnect) toast("متصل بقاعدة بيانات Supabase");
     return true;
   }catch(err){
-    console.warn("Supabase sync fallback:", err?.message || err);
+    console.warn("User sync fallback:", err?.message || err);
     return false;
-  }
-}
-
-async function deleteRecordFromSupabase(table, id){
-  const client = initSupabaseClient();
-  if(!client || !id) return;
-  try{
-    await client.from(table).delete().eq("id", Number(id));
-  }catch(err){
-    console.warn("Supabase delete error:", table, err?.message || err);
   }
 }
 
@@ -877,7 +735,7 @@ async function pushStateToSupabase(){
       db.withdrawals.length ? client.from("withdrawals").upsert(db.withdrawals.map(mapWdToRow), { onConflict: "id" }) : Promise.resolve()
     ]);
   }catch(err){
-    console.warn("Supabase push error:", err?.message || err);
+    console.warn("User push error:", err?.message || err);
   }finally{
     sbSyncing = false;
   }
@@ -885,10 +743,10 @@ async function pushStateToSupabase(){
 
 function subscribeSupabaseRealtime(){
   const client = initSupabaseClient();
-  if(!client || client._akhdimliRealtimeBound) return;
-  client._akhdimliRealtimeBound = true;
+  if(!client || client._akhdimliUserRealtimeBound) return;
+  client._akhdimliUserRealtimeBound = true;
   const tables = ["app_settings","pros","join_requests","orders","messages","reviews","transactions","withdrawals"];
-  const ch = client.channel("akhdimli-live-db");
+  const ch = client.channel("akhdimli-user-live-db");
   tables.forEach(tbl => {
     ch.on("postgres_changes", { event: "*", schema: "public", table: tbl }, ()=>{
       if(sbSyncing) return;
@@ -906,76 +764,13 @@ function saveDB(){
 
 window.addEventListener("storage", (e)=>{
   if(e.key === STORAGE_KEY){
-    const prevOrders = db.orders || [];
-    const prevMessages = db.messages || [];
     db = loadDB();
-    notifyIncomingUpdates(prevOrders, prevMessages);
+    notifyUserIncomingUpdates();
     render();
   }
 });
 
-let themeMode = "auto";
-let toastTimer = null;
-function toast(msg){
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("on");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove("on"), 2600);
-}
-function updateThemeIcon(){
-  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
-  document.getElementById("themeBtn").innerHTML = svgIcon(isDark ? "sun" : "moon", 18);
-}
-function toggleTheme(){
-  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
-  themeMode = isDark ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", themeMode);
-  updateThemeIcon();
-}
-function confirmAction({title="تأكيد الإجراء", message="هل أنت متأكد من تنفيذ هذا الإجراء؟", confirmText="تأكيد", danger=false}){
-  return new Promise(resolve=>{
-    const dlg = document.getElementById("dlg");
-    dlg.innerHTML = `
-      <h2 style="margin:0 0 6px">${title}</h2>
-      <div class="desc" style="margin:6px 0 14px">${message}</div>
-      <div class="row">
-        <button type="button" class="btn" id="cfCancel">تراجع</button>
-        <button type="button" class="btn ${danger?"bad":"main"}" id="cfOk">${confirmText}</button>
-      </div>
-    `;
-    dlg.showModal();
-    let done = false;
-    const finish = (val)=>{
-      if(done) return;
-      done = true;
-      dlg.close();
-      resolve(val);
-    };
-    document.getElementById("cfCancel").onclick = ()=>finish(false);
-    document.getElementById("cfOk").onclick = ()=>finish(true);
-    dlg.oncancel = ()=>finish(false);
-  });
-}
-function getPro(id){
-  return db.pros.find(p => p.id === id) || {name:"حرفي",spec:"عام",city:"",phone:"",price:"",active:true,available:true,rating:4.5,jobs:0,balance:0};
-}
-function intlPhone(n){
-  n = (n||"").replace(/\D/g,"");
-  if(n.startsWith("00")) n = n.slice(2);
-  if(n.startsWith("0")) n = "218" + n.slice(1);
-  return n;
-}
-function nowTime(){
-  const d = new Date();
-  return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
-}
 function sendMsg({proId, customerPhone, customerName, sender, text}){
-  const pro = getPro(proId);
-  if(sender === "user" && pro.active === false){
-    toast("هذا الحرفي موقوف حالياً من الإدارة");
-    return false;
-  }
   const clean = (text||"").trim();
   if(!clean) return false;
   const newId = Date.now() + Math.floor(Math.random()*100);
@@ -985,7 +780,7 @@ function sendMsg({proId, customerPhone, customerName, sender, text}){
     proId,
     userId: currentAuthUser?.id || "",
     customerPhone: customerPhone || db.userProfile.phone || "",
-    customerName: customerName || db.userProfile.name || "مستخدم",
+    customerName: customerName || db.userProfile.name || "عميل",
     sender,
     text: clean,
     time: nowTime()
@@ -993,272 +788,131 @@ function sendMsg({proId, customerPhone, customerName, sender, text}){
   saveDB();
   return true;
 }
-function completeOrderAndCredit(order, pro){
-  if(order.status === "مكتمل") return;
-  order.status = "مكتمل";
-  seenOrderStatuses.set(Number(order.id), "مكتمل");
-  order.paid = true;
-  pro.jobs = (pro.jobs || 0) + 1;
-  const net = Math.round((Number(order.amount) || 0) * (1 - db.commissionRate/100));
-  pro.balance = (pro.balance || 0) + net;
-  db.transactions.push({
-    id: Date.now() + Math.floor(Math.random()*90),
-    proId: pro.id,
-    title: "إتمام طلب #" + order.id + " (" + order.customerName + ")",
-    amount: net,
-    type: "credit",
-    time: nowTime()
-  });
-}
-function addProReview(pro, customerName, stars, comment){
-  const cleanStars = Math.max(1, Math.min(5, Number(stars) || 5));
-  db.reviews.push({
-    id: Date.now() + Math.floor(Math.random()*90),
-    proId: pro.id,
-    customerName: customerName || "عميل",
-    stars: cleanStars,
-    comment: (comment || "").trim(),
-    date: new Date().toISOString().slice(0,10)
-  });
-  const proReviews = db.reviews.filter(r => r.proId === pro.id);
-  const sum = proReviews.reduce((s, r) => s + Number(r.stars), 0);
-  pro.rating = Number((sum / proReviews.length).toFixed(1));
-}
-
-const ui = { tab: "home", spec: "الكل", city: "الكل", q: "", onlyAvail: false, sortBy: "default", activeProId: 1 };
-
-function openReviewsModal(pro){
-  const list = db.reviews.filter(r => r.proId === pro.id);
-  const dlg = document.getElementById("dlg");
-  dlg.innerHTML = `
-    <h2 style="margin:0 0 4px">تقييمات ${pro.name}</h2>
-    <div class="sub">المتوسط: <b>★ ${pro.rating}</b> (${pro.jobs} عمل منفّذ)</div>
-    <div style="max-height:260px;overflow-y:auto;margin-top:10px">
-      ${list.length ? [...list].reverse().map(r => `
-        <div class="review-item">
-          <div style="display:flex;justify-content:space-between">
-            <b>${r.customerName}</b>
-            <span style="color:var(--acc);font-weight:800">${"★".repeat(r.stars)}</span>
-          </div>
-          <div style="margin-top:3px">${r.comment || "تقييم بدون تعليق"}</div>
-          <div class="sub" style="font-size:11.5px">${r.date}</div>
-        </div>
-      `).join("") : `<div class="empty"><b>لا توجد تقييمات تفصيلية بعد</b></div>`}
-    </div>
-    <div class="row" style="margin-top:14px">
-      <button class="btn main" id="revClose">إغلاق</button>
-    </div>
-  `;
-  dlg.showModal();
-  document.getElementById("revClose").onclick = ()=>dlg.close();
-}
-
-function openRateOrderModal(order, pro){
-  let chosenStars = order.ratingGiven || 5;
-  const dlg = document.getElementById("dlg");
-  dlg.innerHTML = `
-    <h2 style="margin:0 0 4px">تقييم الخدمة مع ${pro.name}</h2>
-    <div class="sub">${pro.spec} • ${order.desc}</div>
-    <label>اختر التقييم</label>
-    <div class="stars-picker" id="starsPicker">
-      ${[1,2,3,4,5].map(n => `<button type="button" class="star-btn ${n<=chosenStars?"on":""}" data-st="${n}">${n} ★</button>`).join("")}
-    </div>
-    <label>تعليقك (اختياري)</label>
-    <textarea id="revComment" rows="2" placeholder="كيف كانت جودة العمل والالتزام بالموعد؟">${order.reviewText || ""}</textarea>
-    <div class="row" style="margin-top:14px">
-      <button class="btn" id="rateCancel">إلغاء</button>
-      <button class="btn main" id="rateSave">حفظ التقييم</button>
-    </div>
-  `;
-  dlg.showModal();
-
-  const paintStars = ()=>{
-    dlg.querySelectorAll(".star-btn").forEach(b => {
-      b.classList.toggle("on", Number(b.dataset.st) <= chosenStars);
-    });
-  };
-  dlg.querySelectorAll(".star-btn").forEach(b => {
-    b.onclick = ()=>{ chosenStars = Number(b.dataset.st); paintStars(); };
-  });
-  document.getElementById("rateCancel").onclick = ()=>dlg.close();
-  document.getElementById("rateSave").onclick = ()=>{
-    const comment = document.getElementById("revComment").value.trim();
-    order.ratingGiven = chosenStars;
-    order.reviewText = comment;
-    addProReview(pro, order.customerName || db.userProfile.name, chosenStars, comment);
-    saveDB();
-    dlg.close();
-    toast("شكراً لتقييمك! تم تحديث تقييم الحرفي");
-    render();
-  };
-}
-
-function renderCards(m){
-  [...m.querySelectorAll(".card, .empty")].forEach(el => el.remove());
-  let filtered = db.pros.filter(p =>
-    p.active &&
-    (!ui.onlyAvail || p.available) &&
-    (ui.spec === "الكل" || p.spec === ui.spec) &&
-    (ui.city === "الكل" || p.city === ui.city) &&
-    (!ui.q.trim() || (p.name+p.spec+p.city+p.desc).includes(ui.q.trim()))
-  );
-  if(ui.sortBy === "rating"){
-    filtered = [...filtered].sort((a,b)=>(b.rating||0)-(a.rating||0));
-  } else if(ui.sortBy === "jobs"){
-    filtered = [...filtered].sort((a,b)=>(b.jobs||0)-(a.jobs||0));
-  }
-  if(!filtered.length){
-    m.insertAdjacentHTML("beforeend",`<div class="empty"><b>لا يوجد حرفيون مطابقون</b>جرّب تغيير التخصص أو المدينة أو الفلاتر.</div>`);
-    return;
-  }
-  filtered.forEach(p=>{
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <div class="top">
-        <div class="av">${specIcon(p.spec, 25)}</div>
-        <div>
-          <h3>
-            ${p.name}
-            ${p.verified ? `<span class="ver-ic" title="حرفي موثّق">${svgIcon("verified", 17)}</span>` : ""}
-            <span class="badge ${p.available ? "ok" : "bad"}">${p.available ? "متاح" : "مشغول"}</span>
-          </h3>
-          <div class="sub">${p.spec} • ${p.city}</div>
-        </div>
-        <button type="button" class="rate" data-revs="${p.id}" style="background:none;border:0;color:inherit;font:inherit;cursor:pointer" title="عرض التقييمات"><b>★</b> ${p.rating} (${p.jobs})</button>
-      </div>
-      <p class="desc">${p.desc}</p>
-      <div class="sub" style="margin:-4px 0 10px">السعر التقديري: <b>${p.price}</b></div>
-      <div class="row">
-        <button class="btn" data-chat="${p.id}">محادثة</button>
-        <a class="btn" href="tel:+${intlPhone(p.phone)}">اتصال</a>
-        <button class="btn main" data-req="${p.id}">طلب خدمة</button>
-      </div>
-    `;
-    card.querySelector("[data-revs]").onclick = ()=>openReviewsModal(p);
-    card.querySelector("[data-chat]").onclick = ()=>{
-      ui.activeProId = p.id;
-      ui.tab = "chat";
-      unreadIncomingMsgs = 0;
-      render();
-    };
-    card.querySelector("[data-req]").onclick = ()=>openOrderModal(p);
-    m.append(card);
-  });
-}
 
 function openOrderModal(pro){
-  if(pro.active === false){
-    toast("هذا الحرفي موقوف حالياً من الإدارة");
-    return;
-  }
-  const ps = db.paymentSettings;
   const dlg = document.getElementById("dlg");
-  const hasAnyPay = ps.cashEnabled || ps.transferEnabled;
-  const defaultMethod = ps.cashEnabled ? "نقدي" : (ps.transferEnabled ? "تحويل" : "نقدي");
+  const ps = db.paymentSettings || {};
+  const canCash = ps.cashEnabled !== false;
+  const canTransfer = ps.transferEnabled !== false;
 
   dlg.innerHTML = `
-    <h2 style="margin:0 0 4px">طلب خدمة من ${pro.name}</h2>
-    <div class="sub">${pro.spec} • ${pro.city} ${pro.available ? "• متاح حالياً" : "• قد يكون مشغولاً حالياً"}</div>
+    <h2 style="margin:0 0 4px">طلب خدمة — ${pro.name}</h2>
+    <div class="sub">${pro.spec} • ${pro.city} • السعر التقديري: <b>${pro.price}</b></div>
     <label>اسمك</label>
-    <input id="mName" value="${db.userProfile.name||""}" placeholder="اكتب اسمك">
-    <label>رقم هاتفك</label>
-    <input id="mPhone" value="${db.userProfile.phone||""}" placeholder="091...">
-    <label>وصف المشكلة / المطلوب</label>
-    <textarea id="mDesc" rows="2" placeholder="اشرح باختصار المطلوب..."></textarea>
-    <label>الموعد المناسب</label>
-    <input type="date" id="mDate">
-    <label>الميزانية المتوقعة (د.ل)</label>
-    <input type="number" id="mAmount" value="50" min="10">
-    ${hasAnyPay ? `
-      <label>طريقة الدفع</label>
-      <select id="mPayMethod">
-        ${ps.cashEnabled ? `<option value="نقدي" ${defaultMethod==="نقدي"?"selected":""}>دفع نقدي (كاش) عند الإتمام</option>` : ""}
-        ${ps.transferEnabled ? `<option value="تحويل" ${defaultMethod==="تحويل"?"selected":""}>تحويل / محفظة إلكترونية</option>` : ""}
-      </select>
-      <div id="transferBox" class="pay-box" style="display:none">
-        <div><b>الجهة:</b> ${ps.bankName || "حساب المنصة"}</div>
-        ${ps.accountNumber ? `<div><b>رقم الحساب / المحفظة:</b> <code>${ps.accountNumber}</code></div>` : ""}
-        <div><b>باسم:</b> ${ps.accountHolder || "منصة اخدملي"}</div>
-        <label style="margin-top:8px">رقم مرجع التحويل (اختياري)</label>
-        <input id="mTransferRef" placeholder="مثال: REF-12345">
-      </div>
-    ` : `
-      <div class="pay-box" style="border-color:var(--bad)">
-        <b style="color:var(--bad)">تنبيه:</b> طرق الدفع الإلكترونية/النقدية معطّلة حالياً من الإدارة، وسيتم الاتفاق على التسوية مباشرة مع الحرفي.
-      </div>
-    `}
-    <div class="row" style="margin-top:16px">
-      <button class="btn" id="mClose">إلغاء</button>
-      <button class="btn main" id="mSend">تأكيد وإرسال</button>
+    <input id="oName" value="${db.userProfile.name||""}" placeholder="اكتب اسمك">
+    <label>رقم الهاتف</label>
+    <input id="oPhone" value="${db.userProfile.phone||""}" placeholder="091...">
+    <label>المدينة / العنوان</label>
+    <input id="oCity" value="${db.userProfile.city||pro.city}" placeholder="المدينة أو الحي">
+    <label>المبلغ المتفق عليه (د.ل)</label>
+    <input type="number" id="oAmount" min="1" value="60">
+    <label>طريقة الدفع</label>
+    <select id="oPay">
+      ${canCash ? `<option value="نقدي">نقدي (كاش عند الإتمام)</option>` : ""}
+      ${canTransfer ? `<option value="تحويل">تحويل بنكي / محفظة</option>` : ""}
+    </select>
+    ${canTransfer && ps.accountNumber ? `<div class="sub" style="margin-top:6px">بيانات التحويل: <b>${ps.bankName||""}</b> — <b>${ps.accountNumber}</b> (${ps.accountHolder||""})</div>` : ""}
+    <label>وصف المشكلة أو المطلوب</label>
+    <textarea id="oDesc" rows="2" placeholder="اشرح المطلوب باختصار..."></textarea>
+    <div class="row" style="margin-top:14px">
+      <button type="button" class="btn" id="oCancel">إلغاء</button>
+      <button type="button" class="btn main" id="oSend">إرسال الطلب</button>
     </div>
   `;
   dlg.showModal();
-
-  const paySel = document.getElementById("mPayMethod");
-  const tBox = document.getElementById("transferBox");
-  const syncPayUI = ()=>{
-    if(!paySel || !tBox) return;
-    tBox.style.display = paySel.value === "تحويل" ? "block" : "none";
-  };
-  if(paySel) paySel.onchange = syncPayUI;
-  syncPayUI();
-
-  document.getElementById("mClose").onclick = ()=>dlg.close();
-  document.getElementById("mSend").onclick = ()=>{
-    const name = document.getElementById("mName").value.trim();
-    const phone = document.getElementById("mPhone").value.trim();
-    const desc = document.getElementById("mDesc").value.trim();
-    const date = document.getElementById("mDate").value;
-    const rawAmt = Number(document.getElementById("mAmount").value);
-    const amount = Number.isFinite(rawAmt) && rawAmt > 0 ? Math.round(rawAmt) : 50;
-    const paymentMethod = paySel ? paySel.value : "نقدي";
-    const transferRef = paymentMethod === "تحويل" ? (document.getElementById("mTransferRef")?.value.trim() || "") : "";
-    if(!name || !phone || !desc){ toast("يرجى تعبئة الاسم والهاتف ووصف المشكلة"); return; }
-    db.userProfile = {...db.userProfile, name, phone, city: pro.city};
-    const newOrderId = Date.now();
-    seenOrderStatuses.set(newOrderId, "جديد");
+  document.getElementById("oCancel").onclick = ()=>dlg.close();
+  document.getElementById("oSend").onclick = ()=>{
+    const customerName = document.getElementById("oName").value.trim();
+    const customerPhone = document.getElementById("oPhone").value.trim();
+    const city = document.getElementById("oCity").value.trim() || pro.city;
+    const amount = Math.max(1, Number(document.getElementById("oAmount").value) || 50);
+    const paymentMethod = document.getElementById("oPay").value || "نقدي";
+    const desc = document.getElementById("oDesc").value.trim();
+    if(!customerName || !customerPhone || !desc){
+      toast("يرجى تعبئة الاسم ورقم الهاتف ووصف الطلب");
+      return;
+    }
+    const orderId = Date.now();
+    seenOrderStatuses.set(orderId, "جديد");
     db.orders.push({
-      id: newOrderId,
-      proId: pro.id,
+      id: orderId,
+      proId: Number(pro.id),
       userId: currentAuthUser?.id || "",
-      customerName: name,
-      customerPhone: phone,
-      city: pro.city,
+      customerName,
+      customerPhone,
+      city,
       desc,
-      date,
+      date: new Date().toISOString().slice(0,10),
       amount,
       paymentMethod,
-      transferRef,
+      transferRef: "",
       paid: false,
       status: "جديد",
       ratingGiven: 0,
       reviewText: ""
     });
-    const payNote = paymentMethod === "تحويل"
-      ? " • الدفع: تحويل" + (transferRef ? " (مرجع: " + transferRef + ")" : "")
-      : " • الدفع: نقدي";
-    sendMsg({
-      proId: pro.id, customerPhone: phone, customerName: name,
-      sender: "user", text: "طلب خدمة جديد (" + pro.spec + "): " + desc + payNote
-    });
     saveDB();
     dlg.close();
-    toast("تم إرسال الطلب بنجاح");
-    ui.activeProId = pro.id;
+    toast("تم إرسال طلبك إلى " + pro.name);
     ui.tab = "orders";
     render();
   };
 }
 
+function openReviewModal(order, pro){
+  const dlg = document.getElementById("dlg");
+  dlg.innerHTML = `
+    <h2 style="margin:0 0 4px">تقييم الخدمة — ${pro ? pro.name : "الحرفي"}</h2>
+    <div class="sub">الطلب #${order.id} • ${order.amount} د.ل</div>
+    <label>التقييم (من 1 إلى 5 نجوم)</label>
+    <select id="rvStars">
+      <option value="5">★★★★★ (5)</option>
+      <option value="4">★★★★☆ (4)</option>
+      <option value="3">★★★☆☆ (3)</option>
+      <option value="2">★★☆☆☆ (2)</option>
+      <option value="1">★☆☆☆☆ (1)</option>
+    </select>
+    <label>تعليقك (اختياري)</label>
+    <textarea id="rvComment" rows="2" placeholder="اكتب رأيك في جودة العمل والالتزام..."></textarea>
+    <div class="row" style="margin-top:14px">
+      <button type="button" class="btn" id="rvCancel">إلغاء</button>
+      <button type="button" class="btn main" id="rvSave">حفظ التقييم</button>
+    </div>
+  `;
+  dlg.showModal();
+  document.getElementById("rvCancel").onclick = ()=>dlg.close();
+  document.getElementById("rvSave").onclick = ()=>{
+    const stars = Number(document.getElementById("rvStars").value) || 5;
+    const comment = document.getElementById("rvComment").value.trim();
+    order.ratingGiven = stars;
+    order.reviewText = comment;
+    db.reviews.push({
+      id: Date.now(),
+      proId: Number(order.proId),
+      customerName: order.customerName || db.userProfile.name || "عميل",
+      stars,
+      comment,
+      date: new Date().toISOString().slice(0,10)
+    });
+    if(pro){
+      const proRevs = db.reviews.filter(r => Number(r.proId) === Number(pro.id));
+      const avg = proRevs.reduce((s, r) => s + Number(r.stars || 5), 0) / Math.max(1, proRevs.length);
+      pro.rating = Number(avg.toFixed(1));
+    }
+    saveDB();
+    dlg.close();
+    toast("شكراً لتقييمك!");
+    render();
+  };
+}
+
 function render(){
+  if(ui.tab === "orders") unreadOrderUpdates = 0;
   if(ui.tab === "chat") unreadIncomingMsgs = 0;
   updateThemeIcon();
+
   const m = document.getElementById("main");
   m.innerHTML = "";
-
-  const myOrders = db.orders.filter(isOwnedByCurrentUser);
-  const myMessages = db.messages.filter(isOwnedByCurrentUser);
 
   if(authBannerMessage && !currentAuthUser){
     m.insertAdjacentHTML("beforeend",`
@@ -1269,94 +923,160 @@ function render(){
     `);
   }
 
+  const activePros = (db.pros || []).filter(p => p.active !== false);
+
   if(ui.tab === "home"){
-    const cities = ["الكل", ...new Set(db.pros.map(p=>p.city))];
     const searchBox = document.createElement("div");
-    searchBox.className = "search-row";
-    searchBox.innerHTML = `
-      <input type="search" id="uSearch" placeholder="ابحث عن سباك، كهربائي، نجار..." value="${ui.q}">
-      <select id="uCity">
-        ${cities.map(c=>`<option value="${c}" ${ui.city===c?"selected":""}>${c==="الكل"?"كل المدن":c}</option>`).join("")}
-      </select>
-    `;
+    searchBox.className = "search";
+    searchBox.innerHTML = `<span class="s-ic">${svgIcon("search",18)}</span><input id="qInput" placeholder="ابحث عن حرفي أو تخصص أو مدينة..." value="${ui.q}">`;
     m.append(searchBox);
+    document.getElementById("qInput").oninput = e => { ui.q = e.target.value; renderList(); };
 
-    const filterBar = document.createElement("div");
-    filterBar.className = "chips";
-    filterBar.style.paddingTop = "0";
-    filterBar.style.paddingBottom = "6px";
-    filterBar.innerHTML = `
-      <button type="button" class="chip" id="availFilter" aria-pressed="${String(ui.onlyAvail)}">المتاحون الآن</button>
-      <select id="uSort" style="width:auto;padding:5px 10px;font-size:13px;border-radius:999px" aria-label="ترتيب الحرفيين">
-        <option value="default" ${ui.sortBy==="default"?"selected":""}>الترتيب الافتراضي</option>
-        <option value="rating" ${ui.sortBy==="rating"?"selected":""}>الأعلى تقييماً ★</option>
-        <option value="jobs" ${ui.sortBy==="jobs"?"selected":""}>الأكثر إنجازاً</option>
-      </select>
-    `;
-    m.append(filterBar);
-
-    const chips = document.createElement("div");
-    chips.className = "chips";
-    SPECS.forEach(s=>{
+    const cats = document.createElement("div");
+    cats.className = "cats";
+    [["الكل","grid"], ...SPECS.map(s=>[s,ICK[s]])].forEach(([s,ic])=>{
       const b = document.createElement("button");
-      b.className = "chip";
-      b.setAttribute("aria-pressed", String(ui.spec === s));
-      b.innerHTML = `${specIcon(s, 16)}<span>${s}</span>`;
+      b.className = "cat";
+      b.innerHTML = `${svgIcon(ic,16)}${s}`;
+      b.setAttribute("aria-pressed", ui.spec === s ? "true" : "false");
       b.onclick = ()=>{ ui.spec = s; render(); };
-      chips.append(b);
+      cats.append(b);
     });
-    m.append(chips);
-    renderCards(m);
+    m.append(cats);
 
-    document.getElementById("uSearch").oninput = e => { ui.q = e.target.value; renderCards(m); };
-    document.getElementById("uCity").onchange = e => { ui.city = e.target.value; render(); };
-    document.getElementById("availFilter").onclick = ()=>{ ui.onlyAvail = !ui.onlyAvail; render(); };
-    document.getElementById("uSort").onchange = e => { ui.sortBy = e.target.value; render(); };
+    const listWrap = document.createElement("div");
+    listWrap.id = "prosList";
+    m.append(listWrap);
+
+    function renderList(){
+      const q = ui.q.trim().toLowerCase();
+      const filtered = activePros.filter(p=>{
+        const okSpec = ui.spec === "الكل" || p.spec === ui.spec;
+        const okQ = !q || [p.name,p.spec,p.city,p.desc].some(v => (v||"").toLowerCase().includes(q));
+        return okSpec && okQ;
+      });
+      listWrap.innerHTML = "";
+      if(!filtered.length){
+        listWrap.innerHTML = `<div class="empty"><b>لا يوجد حرفيون مطابقون</b>جرّب تغييراً في التخصص أو كلمة البحث.</div>`;
+        return;
+      }
+      filtered.forEach(p=>{
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="top">
+            <div class="av">${specIcon(p.spec,25)}</div>
+            <div>
+              <h3>
+                ${p.name}
+                ${p.verified ? `<span class="badge ok">موثّق ✓</span>` : ""}
+                <span class="badge ${p.available!==false?"ok":""}">${p.available!==false?"متاح":"مشغول"}</span>
+              </h3>
+              <div class="sub">${p.spec} • ${p.city} • <span class="rating">★ ${p.rating||5}</span> (${p.jobs||0} عمل) • <b>${p.price}</b></div>
+            </div>
+          </div>
+          <p class="desc">${p.desc}</p>
+          <div class="row">
+            <button class="btn main" data-ord="${p.id}">طلب خدمة</button>
+            <button class="btn" data-cht="${p.id}">مراسلة</button>
+          </div>
+        `;
+        card.querySelector("[data-ord]").onclick = ()=>openOrderModal(p);
+        card.querySelector("[data-cht]").onclick = ()=>{
+          ui.activeChatProId = Number(p.id);
+          ui.tab = "chat";
+          render();
+        };
+        listWrap.append(card);
+      });
+    }
+    renderList();
+  }
+
+  if(ui.tab === "orders"){
+    const myOrders = (db.orders || []).filter(o => {
+      if(currentAuthUser?.id && o.userId) return o.userId === currentAuthUser.id;
+      const uPh = normalizePhone(db.userProfile.phone);
+      return !uPh || normalizePhone(o.customerPhone) === uPh;
+    });
+
+    if(!myOrders.length){
+      m.innerHTML = `<div class="empty"><b>لا توجد طلبات بعد</b>اطلب خدمة من الصفحة الرئيسية لتظهر هنا وتتابع حالتها.</div>`;
+    } else {
+      [...myOrders].reverse().forEach(o=>{
+        const pr = db.pros.find(x => Number(x.id) === Number(o.proId));
+        const cls = o.status === "مكتمل" ? "ok" : o.status === "ملغي" ? "bad" : "";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="top">
+            <div class="av">${specIcon(pr?.spec || "سباكة",24)}</div>
+            <div>
+              <h3>${pr ? pr.name : "حرفي #" + o.proId} <span class="sub">(${pr?.spec || ""})</span></h3>
+              <div class="sub">${o.city || pr?.city || ""} • <b>${o.amount} د.ل</b> • ${o.paymentMethod} ${o.date ? "• " + o.date : ""}</div>
+            </div>
+            <span class="badge ${cls}" style="margin-inline-start:auto">${o.status}</span>
+          </div>
+          <p class="desc">${o.desc}</p>
+          ${o.ratingGiven > 0 ? `<div class="sub" style="margin-bottom:8px">تقييمك: <b style="color:var(--acc)">★ ${o.ratingGiven}</b> ${o.reviewText ? "— " + o.reviewText : ""}</div>` : ""}
+          <div class="row">
+            ${o.status === "مكتمل" && !o.ratingGiven ? `<button class="btn main sm" data-rev="${o.id}">تقييم الخدمة</button>` : ""}
+            <button class="btn sm" data-cht="${o.proId}">مراسلة الحرفي</button>
+          </div>
+        `;
+        if(card.querySelector("[data-rev]")){
+          card.querySelector("[data-rev]").onclick = ()=>openReviewModal(o, pr);
+        }
+        card.querySelector("[data-cht]").onclick = ()=>{
+          ui.activeChatProId = Number(o.proId);
+          ui.tab = "chat";
+          render();
+        };
+        m.append(card);
+      });
+    }
   }
 
   if(ui.tab === "chat"){
-    const selectablePros = db.pros.filter(p => p.active || p.id === ui.activeProId);
-    const pro = selectablePros.find(p => p.id === ui.activeProId) || selectablePros[0];
+    const proList = activePros.length ? activePros : db.pros;
+    const pro = proList.find(p => Number(p.id) === Number(ui.activeChatProId)) || proList[0];
     if(!pro){
       m.innerHTML = `<div class="empty"><b>لا يوجد حرفيون متاحون للمحادثة</b></div>`;
     } else {
-      ui.activeProId = pro.id;
-      const isProInactive = pro.active === false;
-      const myPhone = db.userProfile.phone || "";
-      const convMsgs = myMessages.filter(msg => msg.proId === pro.id);
+      ui.activeChatProId = Number(pro.id);
+      const uPh = normalizePhone(db.userProfile.phone);
+      const chatMsgs = (db.messages || []).filter(msg => {
+        if(Number(msg.proId) !== Number(pro.id)) return false;
+        if(currentAuthUser?.id && msg.userId) return msg.userId === currentAuthUser.id;
+        return !uPh || normalizePhone(msg.customerPhone) === uPh;
+      });
 
       m.innerHTML = `
-        ${isProInactive ? `
-          <div class="card" style="border-color:var(--bad)">
-            <b style="color:var(--bad)">هذا الحرفي موقوف حالياً</b>
-            <div class="sub" style="margin-top:3px">تم إيقاف حساب هذا الحرفي من قِبل الإدارة، لذا لا يمكن إرسال رسائل جديدة إليه.</div>
-          </div>
-        ` : ""}
         <div class="chat-box">
           <div class="chat-head">
-            <div class="av" style="width:38px;height:38px">${specIcon(pro.spec, 20)}</div>
+            <div class="av" style="width:38px;height:38px">${specIcon(pro.spec,20)}</div>
             <div style="flex:1;min-width:0">
-              <b>${pro.name} ${isProInactive ? `<span class="badge bad">موقوف</span>` : ""}</b>
+              <b>${pro.name}</b>
               <div class="sub">${pro.spec} • ${pro.city}</div>
             </div>
-            <select id="chatProSelect" style="width:auto;padding:5px 8px;font-size:12.5px" aria-label="اختر الحرفي">
-              ${selectablePros.map(p=>`<option value="${p.id}" ${p.id===pro.id?"selected":""}>${p.name}${p.active===false?" (موقوف)":""}</option>`).join("")}
+            <select id="chatProSelect" style="width:auto;padding:5px 8px;font-size:12.5px" aria-label="اختر حرفياً">
+              ${proList.map(p=>`<option value="${p.id}" ${Number(p.id)===Number(pro.id)?"selected":""}>${p.name} (${p.spec})</option>`).join("")}
             </select>
           </div>
           <div class="chat-msgs" id="chatMsgs">
-            ${convMsgs.length ? convMsgs.map(msg => `
+            ${chatMsgs.length ? chatMsgs.map(msg => `
               <div class="msg ${msg.sender === "user" ? "me" : "them"}">
                 <div>${msg.text}</div>
                 <div class="msg-meta">
-                  <span>${msg.sender === "user" ? "أنت" : pro.name}</span>
+                  <span>${msg.sender === "user" ? (db.userProfile.name || "أنت") : pro.name}</span>
                   <span>${msg.time}</span>
                 </div>
               </div>
-            `).join("") : `<div class="empty"><b>ابدأ المحادثة مع ${pro.name}</b>اسأل عن السعر أو المواعيد أو تفاصيل العمل.</div>`}
+            `).join("") : `<div class="empty"><b>ابدأ المحادثة مع ${pro.name}</b>اسأل عن المواعيد أو تفاصيل الخدمة.</div>`}
           </div>
           <form class="chat-form" id="chatForm">
-            <input id="chatInput" placeholder="${isProInactive ? "الحرفي موقوف حالياً..." : "اكتب رسالتك للحرفي..."}" autocomplete="off" ${isProInactive ? "disabled" : ""}>
-            <button class="btn main sm" type="submit" aria-label="إرسال" ${isProInactive ? "disabled" : ""}>${svgIcon("send", 18)}</button>
+            <input id="chatInput" placeholder="اكتب رسالتك..." autocomplete="off">
+            <button class="btn main sm" type="submit" aria-label="إرسال">${svgIcon("send",18)}</button>
           </form>
         </div>
       `;
@@ -1365,7 +1085,7 @@ function render(){
       box.scrollTop = box.scrollHeight;
 
       document.getElementById("chatProSelect").onchange = e => {
-        ui.activeProId = Number(e.target.value);
+        ui.activeChatProId = Number(e.target.value);
         render();
       };
       document.getElementById("chatForm").onsubmit = e => {
@@ -1373,8 +1093,8 @@ function render(){
         const inp = document.getElementById("chatInput");
         if(sendMsg({
           proId: pro.id,
-          customerPhone: myPhone,
-          customerName: db.userProfile.name || "مستخدم",
+          customerPhone: db.userProfile.phone || "",
+          customerName: db.userProfile.name || "عميل",
           sender: "user",
           text: inp.value
         })){
@@ -1385,189 +1105,83 @@ function render(){
     }
   }
 
-  if(ui.tab === "orders"){
-    if(!myOrders.length){
-      m.insertAdjacentHTML("beforeend",`<div class="empty"><b>لا توجد طلبات خاصة بحسابك حالياً</b>اطلب خدمة من تبويب «الحرفيون» ليظهر طلبك هنا.</div>`);
-    } else {
-      [...myOrders].reverse().forEach(o=>{
-        const p = getPro(o.proId);
-        const cls = o.status === "مكتمل" ? "ok" : o.status === "ملغي" ? "bad" : "";
-        const payLabel = o.paymentMethod === "تحويل"
-          ? `تحويل ${o.transferRef ? "(" + o.transferRef + ")" : ""}`
-          : "نقدي";
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <div class="top">
-            <div class="av">${specIcon(p.spec, 24)}</div>
-            <div>
-              <h3>${p.name} <span class="sub">(${p.spec})</span></h3>
-              <div class="sub">${o.city} ${o.date ? "• " + o.date : ""} • ${o.amount} د.ل • الدفع: <b>${payLabel}</b></div>
-            </div>
-            <span class="badge ${cls}" style="margin-inline-start:auto">${o.status}</span>
-          </div>
-          <p class="desc">${o.desc}</p>
-          <div class="sub" style="margin:-4px 0 10px">
-            حالة الدفع: <b style="color:${o.paid ? "var(--ok)" : "var(--mut)"}">${o.paid ? "تم تأكيد الدفع ✓" : "بانتظار الدفع / التسوية"}</b>
-            ${o.ratingGiven ? ` • تقييمك: <b style="color:var(--acc)">${o.ratingGiven} ★</b>` : ""}
-          </div>
-          <div class="row">
-            ${o.status !== "مكتمل" && o.status !== "ملغي" ? `
-              <button class="btn main sm" data-done="${o.id}">تأكيد إتمام العمل</button>
-              <button class="btn bad sm" data-cancel="${o.id}">إلغاء الطلب</button>
-            ` : ""}
-            ${o.status === "مكتمل" ? `
-              <button class="btn main sm" data-rate="${o.id}">${o.ratingGiven ? "تعديل التقييم" : "تقييم الحرفي ★"}</button>
-            ` : ""}
-            <button class="btn sm" data-openchat="${p.id}">محادثة الحرفي</button>
-          </div>
-        `;
-        card.querySelector("[data-openchat]").onclick = ()=>{
-          ui.activeProId = p.id;
-          ui.tab = "chat";
-          unreadIncomingMsgs = 0;
-          render();
-        };
-        if(card.querySelector("[data-rate]")){
-          card.querySelector("[data-rate]").onclick = ()=>openRateOrderModal(o, p);
-        }
-        if(card.querySelector("[data-done]")){
-          card.querySelector("[data-done]").onclick = async ()=>{
-            const ok = await confirmAction({
-              title: "تأكيد إتمام العمل",
-              message: `هل تم إنجاز العمل مع <b>${p.name}</b> (${o.amount} د.ل) بشكل مرضٍ؟`,
-              confirmText: "تأكيد الإتمام"
-            });
-            if(!ok) return;
-            completeOrderAndCredit(o, p);
-            saveDB(); toast("تم تأكيد إتمام الطلب! يمكنك تقييم الحرفي الآن"); render();
-          };
-          card.querySelector("[data-cancel]").onclick = async ()=>{
-            const ok = await confirmAction({
-              title: "إلغاء الطلب",
-              message: `هل أنت متأكد من إلغاء الطلب المقدّم إلى <b>${p.name}</b>؟`,
-              confirmText: "إلغاء الطلب",
-              danger: true
-            });
-            if(!ok) return;
-            o.status = "ملغي";
-            seenOrderStatuses.set(Number(o.id), "ملغي");
-            saveDB(); toast("تم إلغاء الطلب"); render();
-          };
-        }
-        m.append(card);
-      });
-    }
-  }
-
   if(ui.tab === "profile"){
-    const up = db.userProfile;
-    const completedCount = myOrders.filter(o=>o.status==="مكتمل").length;
-    const isComplete = Boolean(up.name && up.phone && up.city);
-
     m.innerHTML = `
       <div class="card">
         <div class="top">
-          <div class="av">${svgIcon("user", 24)}</div>
+          <div class="av">${svgIcon("user",24)}</div>
           <div>
             <h3>حساب المستخدم</h3>
             <div class="sub">${currentAuthUser ? (currentAuthUser.email || "") : "غير مسجل الدخول بالبريد الإلكتروني"}</div>
           </div>
-          <span class="badge ${currentAuthUser?"ok":""}" style="margin-inline-start:auto">${currentAuthUser?"مسجّل الدخول":"وضع الزائر"}</span>
+          <span class="badge ${currentAuthUser?"ok":""}" style="margin-inline-start:auto">${currentAuthUser?"مسجّل الدخول":"وضع محلي"}</span>
         </div>
         <div class="row" style="margin-top:12px">
           ${currentAuthUser
             ? `<button type="button" class="btn bad sm" id="logoutUserBtn">تسجيل الخروج</button>`
             : `<button type="button" class="btn main sm" id="openUserLoginBtn">تسجيل الدخول</button>
-               <button type="button" class="btn sm" id="openUserSignupBtn">إنشاء حساب</button>`
+               <button type="button" class="btn sm" id="openUserSignupBtn">حساب جديد</button>`
           }
         </div>
       </div>
 
       <div class="card">
-        <div class="top">
-          <div class="av">${svgIcon("user", 26)}</div>
-          <div>
-            <h3>${up.name || "مستخدم اخدملي"} <span class="badge ${isComplete?"ok":""}">${isComplete?"ملف مكتمل":"ناقص البيانات"}</span></h3>
-            <div class="sub">${up.city || "لم تحدد المدينة"} • ${up.phone || "بدون هاتف"}</div>
-          </div>
-        </div>
-        <div class="stats" style="margin:12px 0 0">
-          <div class="stat"><small>طلبات حسابك</small><b>${myOrders.length}</b></div>
-          <div class="stat"><small>الطلبات المكتملة</small><b>${completedCount}</b></div>
-          <div class="stat"><small>رسائلك المرسلة</small><b>${myMessages.filter(x=>x.sender==="user").length}</b></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3 style="margin:0 0 4px">تعديل الملف الشخصي</h3>
-        <div class="sub">تُحفظ بياناتك محلياً في المتصفح وتُزامَن مع حسابك عند تسجيل الدخول.</div>
+        <h3 style="margin:0 0 4px">بياناتي للتواصل والطلبات</h3>
         <label>الاسم الكامل</label>
-        <input id="upName" value="${up.name||""}" placeholder="الاسم الثلاثي">
+        <input id="uName" value="${db.userProfile.name||""}" placeholder="اكتب اسمك">
         <label>رقم الهاتف</label>
-        <input id="upPhone" value="${up.phone||""}" placeholder="0910000000">
+        <input id="uPhone" value="${db.userProfile.phone||""}" placeholder="091...">
         <label>المدينة</label>
-        <input id="upCity" value="${up.city||""}" placeholder="البيضاء">
-        <label>العنوان التفصيلي / الحي (اختياري)</label>
-        <input id="upAddress" value="${up.address||""}" placeholder="الحي أو المنطقة...">
-        <label>ملاحظة / نبذة (اختياري)</label>
-        <textarea id="upBio" rows="2" placeholder="أوقات التواصل المفضلة أو ملاحظات...">${up.bio||""}</textarea>
+        <input id="uCity" value="${db.userProfile.city||"البيضاء"}">
+        <label>العنوان</label>
+        <input id="uAddr" value="${db.userProfile.address||""}" placeholder="الحي / الشارع">
         <div style="margin-top:14px">
-          <button class="btn main" id="saveUserBtn" style="width:100%">حفظ الملف الشخصي</button>
+          <button type="button" class="btn main" id="saveUserBtn" style="width:100%">حفظ بياناتي</button>
         </div>
       </div>
     `;
 
-    if(document.getElementById("logoutUserBtn")){
-      document.getElementById("logoutUserBtn").onclick = logoutUser;
-    }
-    if(document.getElementById("openUserLoginBtn")){
-      document.getElementById("openUserLoginBtn").onclick = ()=>openAuthModal("login");
-    }
-    if(document.getElementById("openUserSignupBtn")){
-      document.getElementById("openUserSignupBtn").onclick = ()=>openAuthModal("signup");
-    }
+    if(document.getElementById("logoutUserBtn")) document.getElementById("logoutUserBtn").onclick = logoutUser;
+    if(document.getElementById("openUserLoginBtn")) document.getElementById("openUserLoginBtn").onclick = ()=>openAuthModal("login");
+    if(document.getElementById("openUserSignupBtn")) document.getElementById("openUserSignupBtn").onclick = ()=>openAuthModal("signup");
 
     document.getElementById("saveUserBtn").onclick = async ()=>{
-      db.userProfile = {
-        name: document.getElementById("upName").value.trim(),
-        phone: document.getElementById("upPhone").value.trim(),
-        city: document.getElementById("upCity").value.trim(),
-        address: document.getElementById("upAddress").value.trim(),
-        bio: document.getElementById("upBio").value.trim()
-      };
+      db.userProfile.name = document.getElementById("uName").value.trim();
+      db.userProfile.phone = document.getElementById("uPhone").value.trim();
+      db.userProfile.city = document.getElementById("uCity").value.trim() || "البيضاء";
+      db.userProfile.address = document.getElementById("uAddr").value.trim();
       saveDB();
-      if(currentAuthUser && sbClient){
-        await sbClient.from("profiles").upsert({
+
+      const client = initSupabaseClient();
+      if(client && currentAuthUser){
+        await client.from("profiles").upsert({
           id: currentAuthUser.id,
           full_name: db.userProfile.name,
           phone: db.userProfile.phone,
           city: db.userProfile.city,
-          address: db.userProfile.address,
-          bio: db.userProfile.bio,
           role: currentAuthProfile?.role || "user",
           is_active: currentAuthProfile?.is_active !== false
         }, { onConflict: "id" });
       }
-      toast("تم حفظ الملف الشخصي"); render();
+      toast("تم حفظ بياناتك");
+      render();
     };
   }
 
-  const activeOrdersCnt = myOrders.filter(o=>o.status!=="مكتمل"&&o.status!=="ملغي").length;
-  const chatBadgeCnt = unreadIncomingMsgs > 0 ? unreadIncomingMsgs : myMessages.filter(x=>x.sender==="user").length;
   const nav = document.getElementById("nav");
   nav.innerHTML = "";
   [
-    ["home","search","الحرفيون",0],
-    ["chat","chat","المحادثات",chatBadgeCnt],
-    ["orders","clipboard","طلباتي",activeOrdersCnt],
-    ["profile","user","ملفي",0]
+    ["home","home","الرئيسية",0],
+    ["orders","list","طلباتي",unreadOrderUpdates],
+    ["chat","chat","الرسائل",unreadIncomingMsgs],
+    ["profile","user","حسابي",0]
   ].forEach(([k,ic,l,cnt])=>{
     const b = document.createElement("button");
     b.innerHTML = `${cnt>0?`<span class="nav-cnt">${cnt}</span>`:""}${svgIcon(ic,23)}${l}`;
     if(ui.tab === k) b.setAttribute("aria-current","page");
     b.onclick = ()=>{
       ui.tab = k;
+      if(k === "orders") unreadOrderUpdates = 0;
       if(k === "chat") unreadIncomingMsgs = 0;
       render();
       window.scrollTo(0,0);
@@ -1575,6 +1189,7 @@ function render(){
     nav.append(b);
   });
 }
+
 initAuthListener();
 render();
 subscribeSupabaseRealtime();
