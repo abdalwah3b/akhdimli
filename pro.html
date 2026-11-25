@@ -559,41 +559,23 @@ async function logoutPro(){
 
 function mapProFromRow(r){
   return {
-    id: Number(r.id),
-    name: r.name,
-    spec: r.spec,
-    city: r.city,
-    phone: r.phone,
-    price: r.price || "حسب العمل",
-    desc: r.desc || "",
-    rating: Number(r.rating ?? 5.0),
-    jobs: Number(r.jobs ?? 0),
-    verified: Boolean(r.verified),
-    active: r.active !== false,
-    available: r.available !== false,
-    balance: Number(r.balance ?? 0)
+    id:Number(r.id),name:r.name,spec:r.spec,city:r.city,phone:r.phone,
+    price:r.price||"حسب العمل",desc:r.desc||"",rating:Number(r.rating??5.0),
+    jobs:Number(r.jobs??0),verified:Boolean(r.verified),active:r.active!==false,
+    available:r.available!==false,balance:Number(r.balance??0)
   };
 }
 function mapProToRow(p){
   return {
-    id: Number(p.id),
-    name: p.name,
-    spec: p.spec,
-    city: p.city,
-    phone: p.phone,
-    price: p.price || "حسب العمل",
-    desc: p.desc || "",
-    rating: Number(p.rating ?? 5.0),
-    jobs: Number(p.jobs ?? 0),
-    verified: Boolean(p.verified),
-    active: p.active !== false,
-    available: p.available !== false,
-    balance: Number(p.balance ?? 0)
+    id:Number(p.id),name:p.name,spec:p.spec,city:p.city,phone:p.phone,
+    price:p.price||"حسب العمل",desc:p.desc||"",rating:Number(p.rating??5.0),
+    jobs:Number(p.jobs??0),verified:Boolean(p.verified),active:p.active!==false,
+    available:p.available!==false,balance:Number(p.balance??0)
   };
 }
 function mapJoinFromRow(r){
   return {
-    id: Number(r.id),name:r.name,spec:r.spec,city:r.city,phone:r.phone,
+    id:Number(r.id),name:r.name,spec:r.spec,city:r.city,phone:r.phone,
     desc:r.desc||"",status:r.status||"قيد المراجعة"
   };
 }
@@ -676,6 +658,21 @@ function mapWdToRow(w){
   };
 }
 
+function mergeById(existingList = [], incomingList = []){
+  const map = new Map();
+  existingList.forEach(item => {
+    if(item && item.id != null) map.set(Number(item.id), item);
+  });
+  incomingList.forEach(item => {
+    if(item && item.id != null){
+      const id = Number(item.id);
+      const prev = map.get(id);
+      map.set(id, prev ? { ...prev, ...item } : item);
+    }
+  });
+  return [...map.values()].sort((a, b) => Number(a.id) - Number(b.id));
+}
+
 function notifyProIncomingUpdates(activeProId){
   if(!hasInitialSyncCompleted){
     seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
@@ -739,7 +736,9 @@ async function syncFromSupabase(showToastOnConnect=false){
     ]);
     if(pRes.error) throw pRes.error;
 
-    const next = loadDB();
+    const current = loadDB();
+    const next = { ...current };
+
     if(sRes.data){
       next.commissionRate = Number(sRes.data.commission_rate ?? next.commissionRate);
       next.paymentSettings = {
@@ -750,13 +749,13 @@ async function syncFromSupabase(showToastOnConnect=false){
         accountHolder: sRes.data.account_holder || next.paymentSettings.accountHolder
       };
     }
-    if(Array.isArray(pRes.data) && pRes.data.length) next.pros = pRes.data.map(mapProFromRow);
-    if(Array.isArray(jRes.data)) next.joinRequests = jRes.data.map(mapJoinFromRow);
-    if(Array.isArray(oRes.data)) next.orders = oRes.data.map(mapOrderFromRow);
-    if(Array.isArray(mRes.data)) next.messages = mRes.data.map(mapMsgFromRow);
-    if(Array.isArray(rRes.data)) next.reviews = rRes.data.map(mapReviewFromRow);
-    if(Array.isArray(tRes.data)) next.transactions = tRes.data.map(mapTxFromRow);
-    if(Array.isArray(wRes.data)) next.withdrawals = wRes.data.map(mapWdFromRow);
+    if(Array.isArray(pRes.data) && pRes.data.length) next.pros = mergeById(current.pros, pRes.data.map(mapProFromRow));
+    if(Array.isArray(jRes.data)) next.joinRequests = mergeById(current.joinRequests, jRes.data.map(mapJoinFromRow));
+    if(Array.isArray(oRes.data)) next.orders = mergeById(current.orders, oRes.data.map(mapOrderFromRow));
+    if(Array.isArray(mRes.data)) next.messages = mergeById(current.messages, mRes.data.map(mapMsgFromRow));
+    if(Array.isArray(rRes.data)) next.reviews = mergeById(current.reviews, rRes.data.map(mapReviewFromRow));
+    if(Array.isArray(tRes.data)) next.transactions = mergeById(current.transactions, tRes.data.map(mapTxFromRow));
+    if(Array.isArray(wRes.data)) next.withdrawals = mergeById(current.withdrawals, wRes.data.map(mapWdFromRow));
 
     db = next;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
@@ -808,6 +807,9 @@ async function pushStateToSupabase(){
 }
 
 async function submitWithdrawalDirect(pro, amt, phone){
+  if(pro.active === false){
+    return { ok: false, error: "حساب الحرفي موقوف من الإدارة ولا يمكن سحب الرصيد." };
+  }
   const wdItem = {
     id: Date.now(),
     proId: Number(pro.id),
@@ -898,6 +900,11 @@ function completeOrderAndCredit(order, pro){
 }
 
 function sendMsg({proId, customerPhone, customerName, sender, text}){
+  const proObj = db.pros.find(p => Number(p.id) === Number(proId));
+  if(sender === "pro" && proObj && proObj.active === false){
+    toast("حسابك موقوف حالياً ولا يمكنك إرسال رسائل");
+    return false;
+  }
   const clean = (text||"").trim();
   if(!clean) return false;
   const newId = Date.now() + Math.floor(Math.random()*100);
@@ -968,8 +975,8 @@ function render(){
   if(isProSuspended){
     m.insertAdjacentHTML("beforeend",`
       <div class="card" style="border-color:var(--bad)">
-        <b style="color:var(--bad)">حساب الحرفي موقوف حالياً من الإدارة</b>
-        <div class="sub" style="margin-top:3px">لا يمكنك استقبال طلبات جديدة أو إرسال رسائل حتى يتم إعادة تفعيل الحساب من لوحة الإدارة.</div>
+        <b style="color:var(--bad)">حسابك موقوف حالياً من الإدارة</b>
+        <div class="sub" style="margin-top:3px">حسابك موقوف ولا يمكنك إدارة الطلبات أو إرسال الرسائل أو سحب الأرباح حتى يتم تفعيله من الإدارة.</div>
       </div>
     `);
   }
@@ -1097,7 +1104,7 @@ function render(){
             `).join("")}
           </div>
           <form class="chat-form" id="chatForm">
-            <input id="chatInput" placeholder="${isProSuspended ? "الحساب موقوف حالياً..." : "اكتب ردك للعميل..."}" autocomplete="off" ${isProSuspended ? "disabled" : ""}>
+            <input id="chatInput" placeholder="${isProSuspended ? "حسابك موقوف ولا يمكنك الإرسال..." : "اكتب ردك للعميل..."}" autocomplete="off" ${isProSuspended ? "disabled" : ""}>
             <button class="btn main sm" type="submit" aria-label="إرسال" ${isProSuspended ? "disabled" : ""}>${svgIcon("send", 18)}</button>
           </form>
         </div>
@@ -1112,7 +1119,7 @@ function render(){
       };
       document.getElementById("chatForm").onsubmit = e => {
         e.preventDefault();
-        if(isProSuspended){ toast("الحساب موقوف حالياً"); return; }
+        if(isProSuspended){ toast("حسابك موقوف حالياً"); return; }
         const inp = document.getElementById("chatInput");
         if(sendMsg({
           proId: pro.id,
@@ -1172,6 +1179,7 @@ function render(){
     const wdBtn = document.getElementById("reqWithdrawBtn");
     if(wdBtn){
       wdBtn.onclick = ()=>{
+        if(isProSuspended){ toast("حسابك موقوف حالياً"); return; }
         const dlg = document.getElementById("dlg");
         dlg.innerHTML = `
           <h2 style="margin:0 0 6px">طلب سحب رصيد</h2>
@@ -1235,7 +1243,7 @@ function render(){
 
       <div class="card">
         <h3 style="margin:0 0 4px">بيانات الحرفي وحالة التواجد</h3>
-        <div class="sub">حالة الحساب: <b>${pro.active === false ? "موقوف من الإدارة" : "نشط"}</b> • التوثيق: <b>${pro.verified ? "موثّق ✓" : "غير موثّق"}</b></div>
+        <div class="sub">حالة الحساب: <b style="color:${pro.active===false?"var(--bad)":"var(--ok)"}">${pro.active === false ? "موقوف من الإدارة" : "نشط"}</b> • التوثيق: <b>${pro.verified ? "موثّق ✓" : "غير موثّق"}</b></div>
         <label>اختر ملف الحرفي النشط للتجربة</label>
         <select id="proSwitchSelect">
           ${db.pros.map(p=>`<option value="${p.id}" ${Number(p.id)===Number(pro.id)?"selected":""}>${p.name} — ${p.spec} (${p.city})</option>`).join("")}
