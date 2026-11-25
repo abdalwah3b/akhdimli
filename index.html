@@ -325,14 +325,13 @@ let currentAuthUser = null;
 let currentAuthProfile = null;
 let authBannerMessage = "";
 
+let hasInitialSyncCompleted = false;
+let seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
+let seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), String(o.status || "")]));
+let unreadIncomingMsgs = 0;
+
 function normalizePhone(n){
   return (n || "").replace(/\D/g, "");
-}
-
-function getActiveOwnerKey(){
-  if(currentAuthUser?.id) return "uid:" + currentAuthUser.id;
-  const ph = normalizePhone(db.userProfile?.phone);
-  return ph ? "ph:" + ph : "guest";
 }
 
 function isOwnedByCurrentUser(record){
@@ -346,6 +345,48 @@ function isOwnedByCurrentUser(record){
   const myPh = normalizePhone(db.userProfile?.phone);
   if(myPh && normalizePhone(record.customerPhone) === myPh) return true;
   return !record.userId && !record.customerPhone;
+}
+
+function notifyIncomingUpdates(prevOrders, prevMessages){
+  if(!hasInitialSyncCompleted){
+    seenMsgIds = new Set((db.messages || []).map(x => Number(x.id)));
+    seenOrderStatuses = new Map((db.orders || []).map(o => [Number(o.id), String(o.status || "")]));
+    hasInitialSyncCompleted = true;
+    return;
+  }
+
+  let newProMsgCount = 0;
+  let lastProName = "";
+  (db.messages || []).forEach(msg => {
+    const mid = Number(msg.id);
+    if(!seenMsgIds.has(mid)){
+      seenMsgIds.add(mid);
+      if(msg.sender === "pro" && isOwnedByCurrentUser(msg)){
+        newProMsgCount++;
+        lastProName = getPro(msg.proId).name;
+      }
+    }
+  });
+
+  if(newProMsgCount > 0){
+    if(ui.tab !== "chat"){
+      unreadIncomingMsgs += newProMsgCount;
+    }
+    toast(newProMsgCount === 1
+      ? `رسالة جديدة من ${lastProName || "الحرفي"}`
+      : `وصلك ${newProMsgCount} رسائل جديدة من الحرفيين`);
+  }
+
+  const prevMap = new Map((prevOrders || []).map(o => [Number(o.id), String(o.status || "")]));
+  (db.orders || []).forEach(o => {
+    const oid = Number(o.id);
+    const curStatus = String(o.status || "");
+    const oldStatus = seenOrderStatuses.has(oid) ? seenOrderStatuses.get(oid) : prevMap.get(oid);
+    seenOrderStatuses.set(oid, curStatus);
+    if(isOwnedByCurrentUser(o) && oldStatus !== undefined && oldStatus !== curStatus){
+      toast(`تحديث حالة الطلب مع ${getPro(o.proId).name}: ${curStatus}`);
+    }
+  });
 }
 
 function initSupabaseClient(){
@@ -783,6 +824,8 @@ async function syncFromSupabase(showToastOnConnect=false){
     ]);
     if(pRes.error) throw pRes.error;
 
+    const prevOrders = db.orders || [];
+    const prevMessages = db.messages || [];
     const next = loadDB();
     if(sRes.data){
       next.commissionRate = Number(sRes.data.commission_rate ?? next.commissionRate);
@@ -804,6 +847,7 @@ async function syncFromSupabase(showToastOnConnect=false){
 
     db = next;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
+    notifyIncomingUpdates(prevOrders, prevMessages);
     const firstConnect = !sbConnected;
     sbConnected = true;
     render();
@@ -869,17 +913,22 @@ function saveDB(){
 
 window.addEventListener("storage", (e)=>{
   if(e.key === STORAGE_KEY){
+    const prevOrders = db.orders || [];
+    const prevMessages = db.messages || [];
     db = loadDB();
+    notifyIncomingUpdates(prevOrders, prevMessages);
     render();
   }
 });
 
 let themeMode = "auto";
+let toastTimer = null;
 function toast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("on");
-  setTimeout(()=>t.classList.remove("on"), 2200);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("on"), 2600);
 }
 function updateThemeIcon(){
   const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
@@ -931,8 +980,10 @@ function nowTime(){
 function sendMsg({proId, customerPhone, customerName, sender, text}){
   const clean = (text||"").trim();
   if(!clean) return false;
+  const newId = Date.now() + Math.floor(Math.random()*100);
+  seenMsgIds.add(newId);
   db.messages.push({
-    id: Date.now() + Math.floor(Math.random()*100),
+    id: newId,
     proId,
     userId: currentAuthUser?.id || "",
     customerPhone: customerPhone || db.userProfile.phone || "",
@@ -947,6 +998,7 @@ function sendMsg({proId, customerPhone, customerName, sender, text}){
 function completeOrderAndCredit(order, pro){
   if(order.status === "مكتمل") return;
   order.status = "مكتمل";
+  seenOrderStatuses.set(Number(order.id), "مكتمل");
   order.paid = true;
   pro.jobs = (pro.jobs || 0) + 1;
   const net = Math.round((Number(order.amount) || 0) * (1 - db.commissionRate/100));
@@ -1089,6 +1141,7 @@ function renderCards(m){
     card.querySelector("[data-chat]").onclick = ()=>{
       ui.activeProId = p.id;
       ui.tab = "chat";
+      unreadIncomingMsgs = 0;
       render();
     };
     card.querySelector("[data-req]").onclick = ()=>openOrderModal(p);
@@ -1160,8 +1213,10 @@ function openOrderModal(pro){
     const transferRef = paymentMethod === "تحويل" ? (document.getElementById("mTransferRef")?.value.trim() || "") : "";
     if(!name || !phone || !desc){ toast("يرجى تعبئة الاسم والهاتف ووصف المشكلة"); return; }
     db.userProfile = {...db.userProfile, name, phone, city: pro.city};
+    const newOrderId = Date.now();
+    seenOrderStatuses.set(newOrderId, "جديد");
     db.orders.push({
-      id: Date.now(),
+      id: newOrderId,
       proId: pro.id,
       userId: currentAuthUser?.id || "",
       customerName: name,
@@ -1194,6 +1249,7 @@ function openOrderModal(pro){
 }
 
 function render(){
+  if(ui.tab === "chat") unreadIncomingMsgs = 0;
   updateThemeIcon();
   const m = document.getElementById("main");
   m.innerHTML = "";
@@ -1359,6 +1415,7 @@ function render(){
         card.querySelector("[data-openchat]").onclick = ()=>{
           ui.activeProId = p.id;
           ui.tab = "chat";
+          unreadIncomingMsgs = 0;
           render();
         };
         if(card.querySelector("[data-rate]")){
@@ -1383,7 +1440,9 @@ function render(){
               danger: true
             });
             if(!ok) return;
-            o.status = "ملغي"; saveDB(); toast("تم إلغاء الطلب"); render();
+            o.status = "ملغي";
+            seenOrderStatuses.set(Number(o.id), "ملغي");
+            saveDB(); toast("تم إلغاء الطلب"); render();
           };
         }
         m.append(card);
@@ -1485,19 +1544,24 @@ function render(){
   }
 
   const activeOrdersCnt = myOrders.filter(o=>o.status!=="مكتمل"&&o.status!=="ملغي").length;
-  const msgsCnt = myMessages.filter(x=>x.sender==="user").length;
+  const chatBadgeCnt = unreadIncomingMsgs > 0 ? unreadIncomingMsgs : myMessages.filter(x=>x.sender==="user").length;
   const nav = document.getElementById("nav");
   nav.innerHTML = "";
   [
     ["home","search","الحرفيون",0],
-    ["chat","chat","المحادثات",msgsCnt],
+    ["chat","chat","المحادثات",chatBadgeCnt],
     ["orders","clipboard","طلباتي",activeOrdersCnt],
     ["profile","user","ملفي",0]
   ].forEach(([k,ic,l,cnt])=>{
     const b = document.createElement("button");
     b.innerHTML = `${cnt>0?`<span class="nav-cnt">${cnt}</span>`:""}${svgIcon(ic,23)}${l}`;
     if(ui.tab === k) b.setAttribute("aria-current","page");
-    b.onclick = ()=>{ ui.tab = k; render(); window.scrollTo(0,0); };
+    b.onclick = ()=>{
+      ui.tab = k;
+      if(k === "chat") unreadIncomingMsgs = 0;
+      render();
+      window.scrollTo(0,0);
+    };
     nav.append(b);
   });
 }
