@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B6B76">
+<title>اخدملي — لوحة تحكم الأدمن</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF4F4;--card:#fff;--ink:#12292D;--mut:#5B7276;
+  --pri:#0B6B76;--pri2:#095560;--on:#fff;--acc:#F59E0B;
+  --line:#D5E2E3;--ok:#157347;--bad:#B3261E;--adm:#1E293B;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1C1F;--card:#15292D;--ink:#E7F1F2;--mut:#93ABAF;
+    --pri:#2BB3C0;--pri2:#5CCAD5;--on:#06262A;--line:#254247;
+    --ok:#5BD48A;--bad:#FF8A80;--adm:#334155;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1C1F;--card:#15292D;--ink:#E7F1F2;--mut:#93ABAF;
+  --pri:#2BB3C0;--pri2:#5CCAD5;--on:#06262A;--line:#254247;
+  --ok:#5BD48A;--bad:#FF8A80;--adm:#334155;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:Cairo,Tahoma,Arial,sans-serif;font-size:15.5px;line-height:1.6;
+  padding-bottom:88px;
+}
+.topbar{
+  position:sticky;top:0;z-index:20;background:var(--card);
+  border-bottom:1px solid var(--line);padding:12px 16px;
+}
+.topbar-in{
+  max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(180deg,#334155,#0F172A);
+  display:grid;place-items:center;flex:none;
+}
+.brand b{display:block;font-size:19px;font-weight:800;line-height:1.15}
+.brand small{color:var(--mut);font-size:12.5px}
+.icon-btn{
+  margin-inline-start:auto;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
+  display:grid;place-items:center;cursor:pointer;flex:none;padding:0;
+}
+main{max-width:680px;margin:0 auto;padding:14px 16px 20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat small{color:var(--mut);font-size:12.5px;display:block}
+.stat b{font-size:22px;font-weight:800;line-height:1.3}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.top{display:flex;gap:12px;align-items:center}
+.av{
+  width:48px;height:48px;border-radius:50%;
+  background:color-mix(in srgb,var(--pri) 15%,var(--card));
+  color:var(--pri2);display:grid;place-items:center;flex:none;
+}
+.top h3{margin:0;font-size:16.5px;font-weight:800;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ver-ic{color:var(--pri2);display:inline-flex;align-items:center}
+.sub{color:var(--mut);font-size:13px}
+.rate{margin-inline-start:auto;font-weight:800;font-size:14px;white-space:nowrap}
+.rate b{color:var(--acc)}
+.desc{margin:10px 0 12px;font-size:14.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  flex:1;min-width:95px;text-align:center;text-decoration:none;font:inherit;
+  font-weight:700;font-size:13.5px;border-radius:11px;padding:9px 12px;
+  border:1.5px solid var(--pri);color:var(--pri2);background:transparent;cursor:pointer;
+}
+.btn.main{background:var(--pri);color:var(--on)}
+.btn.adm{background:var(--adm);border-color:var(--adm);color:#fff}
+.btn.ok{border-color:var(--ok);color:var(--ok)}
+.btn.bad{border-color:var(--bad);color:var(--bad)}
+.btn.sm{flex:0 0 auto;min-width:auto;padding:6px 11px;font-size:12.5px}
+.badge{
+  font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;
+  background:color-mix(in srgb,var(--acc) 22%,var(--card));white-space:nowrap;
+}
+.badge.ok{background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ok)}
+.badge.bad{background:color-mix(in srgb,var(--bad) 18%,var(--card));color:var(--bad)}
+.pay-box{
+  background:color-mix(in srgb,var(--pri) 8%,var(--card));
+  border:1px dashed var(--pri);border-radius:12px;padding:11px 12px;margin-top:10px;font-size:13.5px;
+}
+.search-row{display:flex;gap:8px;margin-bottom:10px}
+input,textarea,select{
+  width:100%;font:inherit;color:var(--ink);background:var(--card);
+  border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;
+}
+.search-row select{width:auto;min-width:130px;flex:none}
+label{display:block;font-weight:700;font-size:13.5px;margin:10px 0 4px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.chip{
+  flex:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:999px;padding:5px 13px;font:inherit;font-size:13.5px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.chip[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:var(--on)}
+.hero{
+  background:linear-gradient(135deg,#0B6B76,#09444D);color:#fff;
+  border-radius:18px;padding:18px;margin-bottom:12px;
+}
+.hero b{display:block;font-size:30px;font-weight:800;line-height:1.25}
+.empty{text-align:center;color:var(--mut);padding:36px 16px}
+.empty b{display:block;color:var(--ink);font-size:16.5px;margin-bottom:4px}
+
+.stars-picker{display:flex;gap:6px;margin:8px 0}
+.star-btn{
+  border:1.5px solid var(--line);background:var(--card);color:var(--mut);
+  border-radius:10px;padding:6px 12px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;
+}
+.star-btn.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,var(--card));color:var(--acc)}
+.review-item{
+  border-top:1px solid var(--line);padding-top:8px;margin-top:8px;font-size:13.5px;
+}
+.tx-row{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;
+}
+.tx-row:last-child{border-bottom:0}
+
+.chat-box{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  display:flex;flex-direction:column;height:calc(100vh - 185px);min-height:360px;overflow:hidden;
+}
+.chat-head{
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;background:var(--card);
+}
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;
+  background:color-mix(in srgb,var(--bg) 55%,transparent);
+}
+.msg{
+  max-width:80%;padding:9px 13px;border-radius:14px;font-size:14.5px;line-height:1.5;
+  word-wrap:break-word;
+}
+.msg.me{
+  align-self:flex-start;background:var(--pri);color:var(--on);
+  border-bottom-right-radius:4px;
+}
+.msg.them{
+  align-self:flex-end;background:var(--card);color:var(--ink);
+  border:1px solid var(--line);border-bottom-left-radius:4px;
+}
+.msg-meta{font-size:11px;opacity:.75;margin-top:4px;display:flex;justify-content:space-between;gap:8px}
+.chat-form{
+  padding:10px;border-top:1px solid var(--line);background:var(--card);
+  display:flex;gap:8px;align-items:center;
+}
+.chat-form input{flex:1;padding:9px 12px}
+
+nav{
+  position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;
+}
+nav button{
+  flex:1;border:0;background:none;font:inherit;font-size:12px;
+  color:var(--mut);padding:8px 4px 6px;cursor:pointer;position:relative;
+}
+nav button svg{display:block;margin:0 auto 3px}
+nav button[aria-current="page"]{color:var(--pri2);font-weight:800}
+.nav-cnt{
+  position:absolute;top:4px;inset-inline-end:calc(50% - 22px);
+  min-width:17px;height:17px;padding:0 4px;border-radius:999px;
+  background:var(--acc);color:#12292D;font-size:10.5px;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;line-height:1;
+}
+dialog{
+  width:min(92vw,460px);border:0;border-radius:18px;padding:18px;
+  background:var(--card);color:var(--ink);
+}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#toast{
+  position:fixed;inset-inline:16px;bottom:84px;margin:auto;max-width:360px;
+  background:var(--ink);color:var(--bg);text-align:center;border-radius:12px;
+  padding:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;z-index:50;
+}
+#toast.on{opacity:1}
+
+.lock-screen{
+  max-width:420px;margin:32px auto;background:var(--card);
+  border:1px solid var(--line);border-radius:18px;padding:20px;
+}
+.lock-err{
+  color:var(--bad);font-size:13px;font-weight:700;margin-top:8px;min-height:20px;
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <div class="logo">
+        <svg width="34" height="34" viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 23L24 8l17 15v17H7z" stroke="#fff" stroke-width="3"/>
+          <path d="M16 35L30 21" stroke="#FFAA1E" stroke-width="3.6"/>
+          <circle cx="31.5" cy="19.5" r="4.2" stroke="#FFAA1E" stroke-width="3"/>
+          <path d="M32 35L18 21" stroke="#fff" stroke-width="3.6"/>
+          <path d="M13.5 22.5l7-6" stroke="#fff" stroke-width="6"/>
+        </svg>
+      </div>
+      <div>
+        <b>اخدملي — الإدارة</b>
+        <small>لوحة تحكم مالك المنصة</small>
+      </div>
+    </div>
+    <button class="icon-btn" id="lockAdminBtn" onclick="lockAdminSession()" title="قفل اللوحة" aria-label="قفل اللوحة" style="display:none;margin-inline-start:0">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </button>
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="تغيير المظهر" aria-label="تغيير المظهر"></button>
+  </div>
+</header>
+
+<div id="adminLock" class="lock-screen" style="display:none">
+  <h2 style="margin:0 0 6px">دخول لوحة الإدارة</h2>
+  <div class="sub">أدخل رمز الدخول للوصول إلى إدارة العمولات وطرق الدفع وطلبات السحب والحرفيين.</div>
+  <label for="adminPassInput">رمز الدخول (PIN / كلمة المرور)</label>
+  <input type="password" id="adminPassInput" placeholder="أدخل رمز الدخول..." autocomplete="current-password">
+  <div class="lock-err" id="adminLockErr"></div>
+  <div class="row" style="margin-top:12px">
+    <button type="button" class="btn adm" id="adminUnlockBtn" style="width:100%">دخول إلى اللوحة</button>
+  </div>
+</div>
+<main id="main"></main>
+
+<nav id="nav"></nav>
+<div id="toast" role="status"></div>
+<dialog id="dlg"></dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const STORAGE_KEY = "akhdimli_shared_db_v6";
+const SPECS = ["الكل","سباكة","كهرباء","نجارة","دهان","تكييف","بناء","حدادة","ألمنيوم","تنظيف"];
+
+const P = {
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L3 17.7V21h3.3l6.3-6.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  hammer:'<path d="M14 4.5l5.5 5.5-2.2 2.2-5.5-5.5z"/><path d="M12.3 8L4 16.3 7.7 20 16 11.7"/>',
+  roller:'<rect x="4" y="3" width="14" height="6" rx="2"/><path d="M18 6h2v5h-8v3"/><rect x="10" y="14" width="4" height="7" rx="1.2"/>',
+  snow:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7"/>',
+  brick:'<rect x="3" y="4" width="18" height="16" rx="1.8"/><path d="M3 9.3h18M3 14.7h18M9 4v5.3M15 9.3v5.4M9 14.7V20"/>',
+  flame:'<path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.5 1 2 1.5 2C10 8 11 5.5 12 3z"/>',
+  window:'<rect x="4" y="3" width="16" height="18" rx="1.8"/><path d="M12 3v18M4 12h16"/>',
+  sparkle:'<path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  clipboard:'<rect x="5" y="4" width="14" height="17" rx="2.2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
+  briefcase:'<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+  inbox:'<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="2.6"/><path d="M3 10h18M16 15h2"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  chat:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  send:'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
+  verified:'<path d="M12 2l2.4 2.4 3.4-.5.5 3.4L20.7 10l-1.5 3.1.5 3.4-3.4.5L13.9 19.4 12 18l-1.9 1.4-2.4-2.4-3.4-.5.5-3.4L3.3 10l2.4-2.7.5-3.4 3.4.5z"/><path d="M9 12l2 2 4-4"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+};
+
+const ICK = {
+  "الكل":"grid","سباكة":"wrench","كهرباء":"bolt","نجارة":"hammer","دهان":"roller",
+  "تكييف":"snow","بناء":"brick","حدادة":"flame","ألمنيوم":"window","تنظيف":"sparkle"
+};
+
+function svgIcon(name, size=22){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name]||P.wrench}</svg>`;
+}
+const specIcon = (spec, size=24) => svgIcon(ICK[spec] || "wrench", size);
+
+const DEFAULT_DATA = {
+  commissionRate: 10,
+  paymentSettings: {
+    cashEnabled: true,
+    transferEnabled: true,
+    bankName: "مصرف تجريبي / محفظة إلكترونية",
+    accountNumber: "000-0000000-00",
+    accountHolder: "منصة اخدملي"
+  },
+  pros: [
+    {id:1,name:"المعلم سالم",spec:"سباكة",city:"البيضاء",phone:"218910000001",price:"من 40 د.ل",desc:"تمديدات وصيانة وكشف التسربات.",rating:4.8,jobs:32,verified:true,active:true,available:true,balance:240},
+    {id:2,name:"المعلم فرج",spec:"كهرباء",city:"البيضاء",phone:"218910000002",price:"من 50 د.ل",desc:"تأسيس وصيانة كهرباء المنازل والمحلات.",rating:4.6,jobs:21,verified:true,active:true,available:true,balance:185},
+    {id:3,name:"المعلم إدريس",spec:"نجارة",city:"شحات",phone:"218910000003",price:"حسب العمل",desc:"مطابخ وأبواب وغرف نوم حسب الطلب.",rating:4.9,jobs:18,verified:true,active:true,available:false,balance:310},
+    {id:4,name:"المعلم مفتاح",spec:"دهان",city:"البيضاء",phone:"218910000004",price:"من 15 د.ل للمتر",desc:"دهان داخلي وخارجي وتجديد الجدران.",rating:4.5,jobs:27,verified:false,active:true,available:true,balance:90}
+  ],
+  joinRequests: [
+    {id:101,name:"المعلم صالح",spec:"تكييف",city:"البيضاء",phone:"218920000010",desc:"خبرة 8 سنوات في صيانة وتركيب المكيفات.",status:"قيد المراجعة"},
+    {id:102,name:"المعلم محمود",spec:"حدادة",city:"سوسة",phone:"218920000011",desc:"تفصيل أبواب حماية وهناجر حديدية.",status:"قيد المراجعة"}
+  ],
+  orders: [
+    {id:501,proId:1,customerName:"أحمد علي",customerPhone:"0912345678",city:"البيضاء",desc:"تسريب ماء تحت حوض المطبخ",date:"2026-11-26",amount:60,paymentMethod:"نقدي",transferRef:"",paid:false,status:"قيد التنفيذ",ratingGiven:0,reviewText:""},
+    {id:502,proId:2,customerName:"مريم سالم",customerPhone:"0923456789",city:"شحات",desc:"فحص لوحة التوزيع وتبديل قاطع",date:"2026-11-25",amount:50,paymentMethod:"تحويل",transferRef:"TRF-88421",paid:true,status:"مكتمل",ratingGiven:5,reviewText:"عمل ممتاز وسريع"}
+  ],
+  messages: [
+    {id:901,proId:1,customerPhone:"0912345678",customerName:"أحمد علي",sender:"user",text:"السلام عليكم معلم سالم، هل يمكنك معاينة التسريب اليوم عصراً؟",time:"11:15"},
+    {id:902,proId:1,customerPhone:"0912345678",customerName:"أحمد علي",sender:"pro",text:"وعليكم السلام، نعم متاح بعد الساعة 4 عصراً في البيضاء.",time:"11:18"}
+  ],
+  reviews: [
+    {id:701,proId:1,customerName:"سالم محمود",stars:5,comment:"معلم دقيق ومحترم جداً في المواعيد.",date:"2026-11-20"},
+    {id:702,proId:2,customerName:"مريم سالم",stars:5,comment:"عمل ممتاز وسريع",date:"2026-11-25"}
+  ],
+  transactions: [
+    {id:801,proId:1,title:"إتمام طلب #502 (صافي بعد العمولة)",amount:54,type:"credit",time:"أمس"}
+  ],
+  withdrawals: [],
+  userProfile: {name:"أحمد علي",phone:"0912345678",city:"البيضاء",address:"حي الليثي",bio:""}
+};
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : structuredClone(DEFAULT_DATA);
+    if(!parsed.messages) parsed.messages = structuredClone(DEFAULT_DATA.messages);
+    if(!parsed.paymentSettings) parsed.paymentSettings = structuredClone(DEFAULT_DATA.paymentSettings);
+    if(!parsed.userProfile) parsed.userProfile = structuredClone(DEFAULT_DATA.userProfile);
+    if(!parsed.reviews) parsed.reviews = structuredClone(DEFAULT_DATA.reviews);
+    if(!parsed.transactions) parsed.transactions = structuredClone(DEFAULT_DATA.transactions);
+    if(!parsed.withdrawals) parsed.withdrawals = [];
+    parsed.pros = (parsed.pros || []).map(p => ({ available: true, ...p }));
+    parsed.orders = (parsed.orders || []).map(o => ({ ratingGiven: 0, reviewText: "", ...o }));
+    return parsed;
+  }catch(e){
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+
+let db = loadDB();
+
+const SUPABASE_URL = "https://mfuwlvybsdgsesbdbivb.supabase.co";
+const SUPABASE_ANON_KEY = "Sb_publishable_t3QokcuyDmbJJYFeJZsMaQ_Sz5SyIbO";
+
+let sbClient = null;
+let sbConnected = false;
+let sbSyncing = false;
+let sbReloadTimer = null;
+
+function initSupabaseClient(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase?.createClient) return null;
+  if(!sbClient){
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+  }
+  return sbClient;
+}
+
+function mapProFromRow(r){
+  return {
+    id: Number(r.id),
+    name: r.name,
+    spec: r.spec,
+    city: r.city,
+    phone: r.phone,
+    price: r.price || "حسب العمل",
+    desc: r.desc || "",
+    rating: Number(r.rating ?? 5.0),
+    jobs: Number(r.jobs ?? 0),
+    verified: Boolean(r.verified),
+    active: r.active !== false,
+    available: r.available !== false,
+    balance: Number(r.balance ?? 0)
+  };
+}
+
+function mapProToRow(p){
+  return {
+    id: Number(p.id),
+    name: p.name,
+    spec: p.spec,
+    city: p.city,
+    phone: p.phone,
+    price: p.price || "حسب العمل",
+    desc: p.desc || "",
+    rating: Number(p.rating ?? 5.0),
+    jobs: Number(p.jobs ?? 0),
+    verified: Boolean(p.verified),
+    active: p.active !== false,
+    available: p.available !== false,
+    balance: Number(p.balance ?? 0)
+  };
+}
+
+function mapJoinFromRow(r){
+  return {
+    id: Number(r.id),
+    name: r.name,
+    spec: r.spec,
+    city: r.city,
+    phone: r.phone,
+    desc: r.desc || "",
+    status: r.status || "قيد المراجعة"
+  };
+}
+
+function mapJoinToRow(j){
+  return {
+    id: Number(j.id),
+    name: j.name,
+    spec: j.spec,
+    city: j.city,
+    phone: j.phone,
+    desc: j.desc || "",
+    status: j.status || "قيد المراجعة"
+  };
+}
+
+function mapOrderFromRow(r){
+  return {
+    id: Number(r.id),
+    proId: Number(r.pro_id),
+    customerName: r.customer_name,
+    customerPhone: r.customer_phone,
+    city: r.city || "",
+    desc: r.desc,
+    date: r.date || "",
+    amount: Number(r.amount ?? 50),
+    paymentMethod: r.payment_method || "نقدي",
+    transferRef: r.transfer_ref || "",
+    paid: Boolean(r.paid),
+    status: r.status || "جديد",
+    ratingGiven: Number(r.rating_given ?? 0),
+    reviewText: r.review_text || ""
+  };
+}
+
+function mapOrderToRow(o){
+  return {
+    id: Number(o.id),
+    pro_id: Number(o.proId),
+    customer_name: o.customerName,
+    customer_phone: o.customerPhone,
+    city: o.city || "",
+    desc: o.desc,
+    date: o.date || "",
+    amount: Number(o.amount ?? 50),
+    payment_method: o.paymentMethod || "نقدي",
+    transfer_ref: o.transferRef || "",
+    paid: Boolean(o.paid),
+    status: o.status || "جديد",
+    rating_given: Number(o.ratingGiven ?? 0),
+    review_text: o.reviewText || ""
+  };
+}
+
+function mapMsgFromRow(r){
+  return {
+    id: Number(r.id),
+    proId: Number(r.pro_id),
+    customerPhone: r.customer_phone,
+    customerName: r.customer_name,
+    sender: r.sender,
+    text: r.text,
+    time: r.time
+  };
+}
+
+function mapMsgToRow(msg){
+  return {
+    id: Number(msg.id),
+    pro_id: Number(msg.proId),
+    customer_phone: msg.customerPhone,
+    customer_name: msg.customerName,
+    sender: msg.sender,
+    text: msg.text,
+    time: msg.time
+  };
+}
+
+function mapReviewFromRow(r){
+  return {
+    id: Number(r.id),
+    proId: Number(r.pro_id),
+    customerName: r.customer_name,
+    stars: Number(r.stars ?? 5),
+    comment: r.comment || "",
+    date: r.date || ""
+  };
+}
+
+function mapReviewToRow(rev){
+  return {
+    id: Number(rev.id),
+    pro_id: Number(rev.proId),
+    customer_name: rev.customerName,
+    stars: Number(rev.stars ?? 5),
+    comment: rev.comment || "",
+    date: rev.date || ""
+  };
+}
+
+function mapTxFromRow(r){
+  return {
+    id: Number(r.id),
+    proId: Number(r.pro_id),
+    title: r.title,
+    amount: Number(r.amount ?? 0),
+    type: r.type,
+    time: r.time
+  };
+}
+
+function mapTxToRow(tx){
+  return {
+    id: Number(tx.id),
+    pro_id: Number(tx.proId),
+    title: tx.title,
+    amount: Number(tx.amount ?? 0),
+    type: tx.type,
+    time: tx.time
+  };
+}
+
+function mapWdFromRow(r){
+  return {
+    id: Number(r.id),
+    proId: Number(r.pro_id),
+    proName: r.pro_name,
+    phone: r.phone || "",
+    amount: Number(r.amount ?? 0),
+    status: r.status || "قيد المراجعة",
+    time: r.time
+  };
+}
+
+function mapWdToRow(w){
+  return {
+    id: Number(w.id),
+    pro_id: Number(w.proId),
+    pro_name: w.proName,
+    phone: w.phone || "",
+    amount: Number(w.amount ?? 0),
+    status: w.status || "قيد المراجعة",
+    time: w.time
+  };
+}
+
+async function seedInitialCloudIfEmpty(client){
+  const { data: existingPros, error: pErr } = await client.from("pros").select("id").limit(1);
+  if(pErr || (existingPros && existingPros.length > 0)) return;
+  await client.from("pros").upsert(DEFAULT_DATA.pros.map(mapProToRow), { onConflict: "id" });
+  await client.from("join_requests").upsert(DEFAULT_DATA.joinRequests.map(mapJoinToRow), { onConflict: "id" });
+  await client.from("orders").upsert(DEFAULT_DATA.orders.map(mapOrderToRow), { onConflict: "id" });
+  await client.from("messages").upsert(DEFAULT_DATA.messages.map(mapMsgToRow), { onConflict: "id" });
+  await client.from("reviews").upsert(DEFAULT_DATA.reviews.map(mapReviewToRow), { onConflict: "id" });
+  await client.from("transactions").upsert(DEFAULT_DATA.transactions.map(mapTxToRow), { onConflict: "id" });
+}
+
+async function syncFromSupabase(showToastOnConnect=false){
+  const client = initSupabaseClient();
+  if(!client) return false;
+  try{
+    await seedInitialCloudIfEmpty(client);
+    const [sRes, pRes, jRes, oRes, mRes, rRes, tRes, wRes] = await Promise.all([
+      client.from("app_settings").select("*").eq("id", 1).maybeSingle(),
+      client.from("pros").select("*").order("id", { ascending: true }),
+      client.from("join_requests").select("*").order("id", { ascending: true }),
+      client.from("orders").select("*").order("id", { ascending: true }),
+      client.from("messages").select("*").order("id", { ascending: true }),
+      client.from("reviews").select("*").order("id", { ascending: true }),
+      client.from("transactions").select("*").order("id", { ascending: true }),
+      client.from("withdrawals").select("*").order("id", { ascending: true })
+    ]);
+    if(pRes.error) throw pRes.error;
+
+    const next = loadDB();
+    if(sRes.data){
+      next.commissionRate = Number(sRes.data.commission_rate ?? next.commissionRate);
+      next.paymentSettings = {
+        cashEnabled: sRes.data.cash_enabled !== false,
+        transferEnabled: sRes.data.transfer_enabled !== false,
+        bankName: sRes.data.bank_name || next.paymentSettings.bankName,
+        accountNumber: sRes.data.account_number || next.paymentSettings.accountNumber,
+        accountHolder: sRes.data.account_holder || next.paymentSettings.accountHolder
+      };
+    }
+    if(Array.isArray(pRes.data)) next.pros = pRes.data.map(mapProFromRow);
+    if(Array.isArray(jRes.data)) next.joinRequests = jRes.data.map(mapJoinFromRow);
+    if(Array.isArray(oRes.data)) next.orders = oRes.data.map(mapOrderFromRow);
+    if(Array.isArray(mRes.data)) next.messages = mRes.data.map(mapMsgFromRow);
+    if(Array.isArray(rRes.data)) next.reviews = rRes.data.map(mapReviewFromRow);
+    if(Array.isArray(tRes.data)) next.transactions = tRes.data.map(mapTxFromRow);
+    if(Array.isArray(wRes.data)) next.withdrawals = wRes.data.map(mapWdFromRow);
+
+    db = next;
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
+    const firstConnect = !sbConnected;
+    sbConnected = true;
+    render();
+    if(showToastOnConnect && firstConnect) toast("متصل بقاعدة بيانات Supabase");
+    return true;
+  }catch(err){
+    console.warn("Supabase sync fallback:", err?.message || err);
+    return false;
+  }
+}
+
+async function pushStateToSupabase(){
+  const client = initSupabaseClient();
+  if(!client || sbSyncing) return;
+  sbSyncing = true;
+  try{
+    const ps = db.paymentSettings || {};
+    await Promise.all([
+      client.from("app_settings").upsert({
+        id: 1,
+        commission_rate: Number(db.commissionRate ?? 10),
+        cash_enabled: ps.cashEnabled !== false,
+        transfer_enabled: ps.transferEnabled !== false,
+        bank_name: ps.bankName || "",
+        account_number: ps.accountNumber || "",
+        account_holder: ps.accountHolder || ""
+      }, { onConflict: "id" }),
+      db.pros.length ? client.from("pros").upsert(db.pros.map(mapProToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.joinRequests.length ? client.from("join_requests").upsert(db.joinRequests.map(mapJoinToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.orders.length ? client.from("orders").upsert(db.orders.map(mapOrderToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.messages.length ? client.from("messages").upsert(db.messages.map(mapMsgToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.reviews.length ? client.from("reviews").upsert(db.reviews.map(mapReviewToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.transactions.length ? client.from("transactions").upsert(db.transactions.map(mapTxToRow), { onConflict: "id" }) : Promise.resolve(),
+      db.withdrawals.length ? client.from("withdrawals").upsert(db.withdrawals.map(mapWdToRow), { onConflict: "id" }) : Promise.resolve()
+    ]);
+  }catch(err){
+    console.warn("Supabase push error:", err?.message || err);
+  }finally{
+    sbSyncing = false;
+  }
+}
+
+function subscribeSupabaseRealtime(){
+  const client = initSupabaseClient();
+  if(!client || client._akhdimliRealtimeBound) return;
+  client._akhdimliRealtimeBound = true;
+  const tables = ["app_settings","pros","join_requests","orders","messages","reviews","transactions","withdrawals"];
+  const ch = client.channel("akhdimli-live-db");
+  tables.forEach(tbl => {
+    ch.on("postgres_changes", { event: "*", schema: "public", table: tbl }, ()=>{
+      if(sbSyncing) return;
+      clearTimeout(sbReloadTimer);
+      sbReloadTimer = setTimeout(()=>syncFromSupabase(false), 180);
+    });
+  });
+  ch.subscribe();
+}
+
+function saveDB(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
+  pushStateToSupabase();
+}
+
+window.addEventListener("storage", (e)=>{
+  if(e.key === STORAGE_KEY){
+    db = loadDB();
+    render();
+  }
+});
+
+let themeMode = "auto";
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  setTimeout(()=>t.classList.remove("on"), 2200);
+}
+function updateThemeIcon(){
+  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
+  document.getElementById("themeBtn").innerHTML = svgIcon(isDark ? "sun" : "moon", 18);
+}
+function toggleTheme(){
+  const isDark = themeMode === "dark" || (themeMode === "auto" && window.matchMedia("(prefers-color-scheme:dark)").matches);
+  themeMode = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", themeMode);
+  updateThemeIcon();
+}
+function confirmAction({title="تأكيد الإجراء", message="هل أنت متأكد من تنفيذ هذا الإجراء؟", confirmText="تأكيد", danger=false}){
+  return new Promise(resolve=>{
+    const dlg = document.getElementById("dlg");
+    dlg.innerHTML = `
+      <h2 style="margin:0 0 6px">${title}</h2>
+      <div class="desc" style="margin:6px 0 14px">${message}</div>
+      <div class="row">
+        <button type="button" class="btn" id="cfCancel">تراجع</button>
+        <button type="button" class="btn ${danger?"bad":"main"}" id="cfOk">${confirmText}</button>
+      </div>
+    `;
+    dlg.showModal();
+    let done = false;
+    const finish = (val)=>{
+      if(done) return;
+      done = true;
+      dlg.close();
+      resolve(val);
+    };
+    document.getElementById("cfCancel").onclick = ()=>finish(false);
+    document.getElementById("cfOk").onclick = ()=>finish(true);
+    dlg.oncancel = ()=>finish(false);
+  });
+}
+function getPro(id){
+  return db.pros.find(p => p.id === id) || {name:"حرفي",spec:"عام",city:"",phone:"",price:"",available:true,rating:4.5,jobs:0,balance:0};
+}
+function intlPhone(n){
+  n = (n||"").replace(/\D/g,"");
+  if(n.startsWith("00")) n = n.slice(2);
+  if(n.startsWith("0")) n = "218" + n.slice(1);
+  return n;
+}
+function waLink(ph, msg){
+  return "https://wa.me/" + intlPhone(ph) + (msg ? "?text=" + encodeURIComponent(msg) : "");
+}
+function nowTime(){
+  const d = new Date();
+  return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
+}
+function sendMsg({proId, customerPhone, customerName, sender, text}){
+  const clean = (text||"").trim();
+  if(!clean) return false;
+  db.messages.push({
+    id: Date.now() + Math.floor(Math.random()*100),
+    proId,
+    customerPhone: customerPhone || db.userProfile.phone || "0910000000",
+    customerName: customerName || db.userProfile.name || "مستخدم",
+    sender,
+    text: clean,
+    time: nowTime()
+  });
+  saveDB();
+  return true;
+}
+function completeOrderAndCredit(order, pro){
+  if(order.status === "مكتمل") return;
+  order.status = "مكتمل";
+  order.paid = true;
+  pro.jobs = (pro.jobs || 0) + 1;
+  const net = Math.round((Number(order.amount) || 0) * (1 - db.commissionRate/100));
+  pro.balance = (pro.balance || 0) + net;
+  db.transactions.push({
+    id: Date.now() + Math.floor(Math.random()*90),
+    proId: pro.id,
+    title: "إتمام طلب #" + order.id + " (" + order.customerName + ")",
+    amount: net,
+    type: "credit",
+    time: nowTime()
+  });
+}
+function addProReview(pro, customerName, stars, comment){
+  const cleanStars = Math.max(1, Math.min(5, Number(stars) || 5));
+  db.reviews.push({
+    id: Date.now() + Math.floor(Math.random()*90),
+    proId: pro.id,
+    customerName: customerName || "عميل",
+    stars: cleanStars,
+    comment: (comment || "").trim(),
+    date: new Date().toISOString().slice(0,10)
+  });
+  const proReviews = db.reviews.filter(r => r.proId === pro.id);
+  const sum = proReviews.reduce((s, r) => s + Number(r.stars), 0);
+  pro.rating = Number((sum / proReviews.length).toFixed(1));
+}
+
+
+const ADMIN_PASSCODE = "5715066";
+const ADMIN_AUTH_KEY = "akhdimli_admin_auth_v1";
+
+function isAdminUnlocked(){
+  try{ return sessionStorage.getItem(ADMIN_AUTH_KEY) === "1"; }catch(e){ return false; }
+}
+
+function setAdminUnlocked(val){
+  try{
+    if(val) sessionStorage.setItem(ADMIN_AUTH_KEY, "1");
+    else sessionStorage.removeItem(ADMIN_AUTH_KEY);
+  }catch(e){}
+}
+
+function lockAdminSession(){
+  setAdminUnlocked(false);
+  toast("تم قفل لوحة الإدارة");
+  render();
+}
+
+function bindAdminLockScreen(){
+  const lockEl = document.getElementById("adminLock");
+  const mainEl = document.getElementById("main");
+  const navEl = document.getElementById("nav");
+  const lockBtn = document.getElementById("lockAdminBtn");
+  const unlocked = isAdminUnlocked();
+
+  if(lockEl) lockEl.style.display = unlocked ? "none" : "block";
+  if(mainEl) mainEl.style.display = unlocked ? "block" : "none";
+  if(navEl) navEl.style.display = unlocked ? "flex" : "none";
+  if(lockBtn) lockBtn.style.display = unlocked ? "grid" : "none";
+
+  if(unlocked) return false;
+
+  const inp = document.getElementById("adminPassInput");
+  const errEl = document.getElementById("adminLockErr");
+  const btn = document.getElementById("adminUnlockBtn");
+
+  const attempt = ()=>{
+    const val = (inp?.value || "").trim();
+    if(val === ADMIN_PASSCODE){
+      setAdminUnlocked(true);
+      if(errEl) errEl.textContent = "";
+      toast("تم فتح لوحة الإدارة");
+      render();
+    } else {
+      if(errEl) errEl.textContent = "رمز الدخول غير صحيح، حاول مرة أخرى.";
+      if(inp){ inp.value = ""; inp.focus(); }
+    }
+  };
+
+  if(btn) btn.onclick = attempt;
+  if(inp){
+    inp.onkeydown = (e)=>{ if(e.key === "Enter"){ e.preventDefault(); attempt(); } };
+    setTimeout(()=>inp.focus(), 50);
+  }
+  return true;
+}
+
+const ui = { tab: "overview" };
+
+function render(){
+  updateThemeIcon();
+  if(bindAdminLockScreen()) return;
+  const m = document.getElementById("main");
+  m.innerHTML = "";
+
+  const completedOrders = db.orders.filter(o=>o.status==="مكتمل");
+  const grossVolume = completedOrders.reduce((s,o)=>s+(Number(o.amount)||0), 0);
+  const platformRevenue = Math.round(grossVolume * (db.commissionRate / 100));
+  const pendingWithdrawalsCnt = db.withdrawals.filter(w=>w.status==="قيد المراجعة").length;
+  const ps = db.paymentSettings;
+
+  if(ui.tab === "overview"){
+    m.innerHTML = `
+      <div class="stats">
+        <div class="stat"><small>الحرفيون المسجلون</small><b>${db.pros.length}</b></div>
+        <div class="stat"><small>طلبات الانضمام المعلقة</small><b>${db.joinRequests.filter(j=>j.status==="قيد المراجعة").length}</b></div>
+        <div class="stat"><small>طلبات السحب المعلقة</small><b>${pendingWithdrawalsCnt}</b></div>
+        <div class="stat"><small>أرباح المنصة</small><b>${platformRevenue} د.ل</b></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 6px">إعدادات عمولة المنصة</h3>
+        <div class="sub">النسبة المقتطعة من كل طلب مكتمل: <b>${db.commissionRate}%</b></div>
+        <div class="row" style="margin-top:10px;align-items:center">
+          <input type="number" id="commInput" value="${db.commissionRate}" min="0" max="50" style="max-width:120px">
+          <button class="btn adm sm" id="saveCommBtn">حفظ النسبة</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 4px">إعدادات طرق الدفع (نقدي وتحويل)</h3>
+        <div class="sub">يمكن تعديل هذه القيم من هنا أو من <code>DEFAULT_DATA.paymentSettings</code> في الكود.</div>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600">
+          <input type="checkbox" id="pCash" ${ps.cashEnabled?"checked":""} style="width:auto">
+          <span>تفعيل الدفع النقدي (كاش)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600">
+          <input type="checkbox" id="pTransfer" ${ps.transferEnabled?"checked":""} style="width:auto">
+          <span>تفعيل التحويل / المحفظة الإلكترونية</span>
+        </label>
+        <label>اسم المصرف أو المحفظة</label>
+        <input id="pBank" value="${ps.bankName||""}">
+        <label>رقم الحساب أو المحفظة</label>
+        <input id="pAcc" value="${ps.accountNumber||""}">
+        <label>اسم المستفيد</label>
+        <input id="pHolder" value="${ps.accountHolder||""}">
+        <div style="margin-top:14px">
+          <button class="btn adm sm" id="savePayBtn">حفظ إعدادات الدفع</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("saveCommBtn").onclick = ()=>{
+      const val = Number(document.getElementById("commInput").value);
+      if(isNaN(val) || val < 0 || val > 50){ toast("أدخل نسبة صحيحة بين 0 و 50"); return; }
+      db.commissionRate = val;
+      saveDB(); toast("تم تحديث العمولة إلى " + val + "%"); render();
+    };
+    document.getElementById("savePayBtn").onclick = ()=>{
+      db.paymentSettings = {
+        cashEnabled: document.getElementById("pCash").checked,
+        transferEnabled: document.getElementById("pTransfer").checked,
+        bankName: document.getElementById("pBank").value.trim(),
+        accountNumber: document.getElementById("pAcc").value.trim(),
+        accountHolder: document.getElementById("pHolder").value.trim()
+      };
+      saveDB(); toast("تم حفظ إعدادات الدفع"); render();
+    };
+  }
+
+  if(ui.tab === "withdrawals"){
+    if(!db.withdrawals.length){
+      m.innerHTML = `<div class="empty"><b>لا توجد طلبات سحب أرباح حالياً</b>ستظهر هنا عند إرسال حرفي لطلب سحب من محفظته.</div>`;
+    } else {
+      [...db.withdrawals].reverse().forEach(w=>{
+        const p = getPro(w.proId);
+        const cls = w.status === "مكتمل" ? "ok" : w.status === "مرفوض" ? "bad" : "";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="top">
+            <div class="av">${svgIcon("wallet", 24)}</div>
+            <div>
+              <h3>${w.proName || p.name} <span class="sub">• ${w.amount} د.ل</span></h3>
+              <div class="sub">هاتف: ${w.phone || p.phone} • الوقت: ${w.time}</div>
+            </div>
+            <span class="badge ${cls}" style="margin-inline-start:auto">${w.status}</span>
+          </div>
+          ${w.status === "قيد المراجعة" ? `
+            <div class="row" style="margin-top:12px">
+              <button class="btn main sm" data-wapp="${w.id}">تأكيد تسوية السحب</button>
+              <button class="btn bad sm" data-wrej="${w.id}">رفض وإعادة الرصيد</button>
+            </div>
+          ` : ""}
+        `;
+        if(card.querySelector("[data-wapp]")){
+          card.querySelector("[data-wapp]").onclick = async ()=>{
+            const ok = await confirmAction({
+              title: "تأكيد تسوية السحب",
+              message: `تأكيد تحويل وتسوية مبلغ <b>${w.amount} د.ل</b> للحرفي <b>${w.proName || p.name}</b>؟`,
+              confirmText: "تأكيد التسوية"
+            });
+            if(!ok) return;
+            w.status = "مكتمل";
+            db.transactions.push({
+              id: Date.now(),
+              proId: w.proId,
+              title: "تسوية طلب سحب #" + w.id + " (معتمد)",
+              amount: w.amount,
+              type: "withdraw",
+              time: nowTime()
+            });
+            saveDB(); toast("تم اعتماد وتسوية طلب السحب"); render();
+          };
+          card.querySelector("[data-wrej]").onclick = async ()=>{
+            const ok = await confirmAction({
+              title: "رفض طلب السحب",
+              message: `رفض طلب السحب وإعادة مبلغ <b>${w.amount} د.ل</b> إلى رصيد <b>${w.proName || p.name}</b>؟`,
+              confirmText: "رفض وإعادة الرصيد",
+              danger: true
+            });
+            if(!ok) return;
+            w.status = "مرفوض";
+            const targetPro = db.pros.find(x => x.id === w.proId);
+            if(targetPro) targetPro.balance = (targetPro.balance || 0) + Number(w.amount || 0);
+            db.transactions.push({
+              id: Date.now(),
+              proId: w.proId,
+              title: "إعادة رصيد طلب سحب مرفوض #" + w.id,
+              amount: w.amount,
+              type: "credit",
+              time: nowTime()
+            });
+            saveDB(); toast("تم رفض الطلب وإعادة الرصيد"); render();
+          };
+        }
+        m.append(card);
+      });
+    }
+  }
+
+  if(ui.tab === "requests"){
+    if(!db.joinRequests.length){
+      m.innerHTML = `<div class="empty"><b>لا توجد طلبات انضمام</b></div>`;
+    } else {
+      [...db.joinRequests].reverse().forEach(r=>{
+        const cls = r.status === "مقبول" ? "ok" : r.status === "مرفوض" ? "bad" : "";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="top">
+            <div class="av">${specIcon(r.spec, 24)}</div>
+            <div>
+              <h3>${r.name} <span class="sub">• ${r.spec}</span></h3>
+              <div class="sub">${r.city} • هاتف: ${r.phone}</div>
+            </div>
+            <span class="badge ${cls}" style="margin-inline-start:auto">${r.status}</span>
+          </div>
+          <p class="desc">${r.desc || "بدون نبذة"}</p>
+          ${r.status === "قيد المراجعة" ? `
+            <div class="row">
+              <button class="btn main sm" data-app="${r.id}">اعتماد وإضافة للتطبيق</button>
+              <button class="btn bad sm" data-rej="${r.id}">رفض</button>
+            </div>
+          ` : ""}
+        `;
+        if(card.querySelector("[data-app]")){
+          card.querySelector("[data-app]").onclick = async ()=>{
+            const ok = await confirmAction({
+              title: "اعتماد طلب انضمام",
+              message: `اعتماد <b>${r.name}</b> (${r.spec}) وإضافته إلى قائمة الحرفيين؟`,
+              confirmText: "اعتماد الحساب"
+            });
+            if(!ok) return;
+            r.status = "مقبول";
+            db.pros.push({
+              id: Date.now(), name: r.name, spec: r.spec, city: r.city,
+              phone: r.phone, price: "حسب العمل", desc: r.desc,
+              rating: 5.0, jobs: 0, verified: true, active: true, available: true, balance: 0
+            });
+            saveDB(); toast("تم اعتماد " + r.name); render();
+          };
+          card.querySelector("[data-rej]").onclick = async ()=>{
+            const ok = await confirmAction({
+              title: "رفض طلب الانضمام",
+              message: `هل أنت متأكد من رفض طلب انضمام <b>${r.name}</b>؟`,
+              confirmText: "رفض الطلب",
+              danger: true
+            });
+            if(!ok) return;
+            r.status = "مرفوض"; saveDB(); toast("تم رفض الطلب"); render();
+          };
+        }
+        m.append(card);
+      });
+    }
+  }
+
+  if(ui.tab === "pros"){
+    db.pros.forEach(p=>{
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="top">
+          <div class="av">${specIcon(p.spec, 24)}</div>
+          <div>
+            <h3>${p.name} ${p.verified ? `<span class="ver-ic">${svgIcon("verified", 16)}</span>` : ""} <span class="sub">• ${p.spec} (${p.city})</span></h3>
+            <div class="sub">هاتف: ${p.phone} • رصيد: ${p.balance || 0} د.ل • أعمال: ${p.jobs} • ★ ${p.rating} • ${p.available ? "متاح" : "مشغول"}</div>
+          </div>
+          <span class="badge ${p.active ? "ok" : "bad"}" style="margin-inline-start:auto">${p.active ? "نشط" : "موقوف"}</span>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn sm" data-ver="${p.id}">${p.verified ? "إلغاء التوثيق" : "توثيق الحساب"}</button>
+          <button class="btn ${p.active ? "bad" : "main"} sm" data-tog="${p.id}">${p.active ? "إيقاف الحساب" : "تفعيل الحساب"}</button>
+        </div>
+      `;
+      card.querySelector("[data-ver]").onclick = ()=>{
+        p.verified = !p.verified; saveDB(); toast("تم تحديث حالة التوثيق"); render();
+      };
+      card.querySelector("[data-tog]").onclick = async ()=>{
+        const nextActive = !p.active;
+        if(!nextActive){
+          const ok = await confirmAction({
+            title: "إيقاف حساب الحرفي",
+            message: `هل أنت متأكد من إيقاف حساب <b>${p.name}</b>؟ لن يظهر للعملاء أثناء الإيقاف.`,
+            confirmText: "إيقاف الحساب",
+            danger: true
+          });
+          if(!ok) return;
+        }
+        p.active = nextActive; saveDB(); toast(p.active ? "تم تفعيل الحساب" : "تم إيقاف الحساب"); render();
+      };
+      m.append(card);
+    });
+  }
+
+  const pendingReqsCnt = db.joinRequests.filter(j=>j.status==="قيد المراجعة").length;
+  const nav = document.getElementById("nav");
+  nav.innerHTML = "";
+  [
+    ["overview","chart","الإحصائيات",0],
+    ["withdrawals","wallet","السحب",pendingWithdrawalsCnt],
+    ["requests","briefcase","الانضمام",pendingReqsCnt],
+    ["pros","wrench","الحرفيون",0]
+  ].forEach(([k,ic,l,cnt])=>{
+    const b = document.createElement("button");
+    b.innerHTML = `${cnt>0?`<span class="nav-cnt">${cnt}</span>`:""}${svgIcon(ic,22)}${l}`;
+    if(ui.tab === k) b.setAttribute("aria-current","page");
+    b.onclick = ()=>{ ui.tab = k; render(); window.scrollTo(0,0); };
+    nav.append(b);
+  });
+}
+render();
+subscribeSupabaseRealtime();
+syncFromSupabase(true);
+</script></body></html>
