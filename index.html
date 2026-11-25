@@ -157,10 +157,6 @@ label{display:block;font-weight:700;font-size:13.5px;margin:10px 0 4px}
 }
 .chat-form input{flex:1;padding:9px 12px}
 
-.auth-tabs{display:flex;gap:8px;margin-bottom:12px}
-.auth-tabs button{flex:1}
-.auth-err{color:var(--bad);font-size:13px;font-weight:700;margin-top:8px;min-height:20px}
-
 nav{
   position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--card);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;
@@ -314,16 +310,12 @@ function loadDB(){
 let db = loadDB();
 
 const SUPABASE_URL = "https://mfuwlvybsdgsesbdbivb.supabase.co";
-const SUPABASE_ANON_KEY = "Sb_publishable_t3QokcuyDmbJJYFeJZsMaQ_Sz5SyIbO";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mdXdsdnlic2Rnc2VzYmRiaXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1OTk1MTgsImV4cCI6MjExMTE3NTUxOH0.hq19DT-bWXkYuzRK3TLzQGuywrJUy8oonKjv_Ykk5qg";
 
 let sbClient = null;
 let sbConnected = false;
 let sbSyncing = false;
 let sbReloadTimer = null;
-
-let currentAuthUser = null;
-let currentAuthProfile = null;
-let authBannerMessage = "";
 
 function initSupabaseClient(){
   if(!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase?.createClient) return null;
@@ -333,205 +325,6 @@ function initSupabaseClient(){
     });
   }
   return sbClient;
-}
-
-async function ensureUserProfileAndStatus(user){
-  const client = initSupabaseClient();
-  if(!client || !user) return null;
-  try{
-    let { data: prof, error } = await client
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-    if(error) throw error;
-
-    if(!prof){
-      const meta = user.user_metadata || {};
-      const fallbackName = meta.full_name || db.userProfile?.name || user.email?.split("@")[0] || "مستخدم";
-      const { data: inserted, error: insErr } = await client
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          full_name: fallbackName,
-          phone: meta.phone || db.userProfile?.phone || "",
-          city: meta.city || db.userProfile?.city || "",
-          address: db.userProfile?.address || "",
-          bio: db.userProfile?.bio || "",
-          role: "user",
-          is_active: true
-        }, { onConflict: "id" })
-        .select("*")
-        .maybeSingle();
-      if(!insErr && inserted) prof = inserted;
-    }
-
-    if(prof && prof.is_active === false){
-      authBannerMessage = "تم إيقاف هذا الحساب من قِبل الإدارة. يرجى التواصل مع الدعم.";
-      await client.auth.signOut();
-      currentAuthUser = null;
-      currentAuthProfile = null;
-      render();
-      return null;
-    }
-
-    currentAuthUser = user;
-    currentAuthProfile = prof || { id: user.id, full_name: user.user_metadata?.full_name || "", is_active: true, role: "user" };
-    authBannerMessage = "";
-
-    db.userProfile = {
-      ...db.userProfile,
-      name: currentAuthProfile.full_name || db.userProfile.name,
-      phone: currentAuthProfile.phone || db.userProfile.phone,
-      city: currentAuthProfile.city || db.userProfile.city,
-      address: currentAuthProfile.address ?? db.userProfile.address,
-      bio: currentAuthProfile.bio ?? db.userProfile.bio
-    };
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }catch(e){}
-    return currentAuthProfile;
-  }catch(e){
-    console.warn("Profile check warning:", e?.message || e);
-    currentAuthUser = user;
-    return currentAuthProfile;
-  }
-}
-
-function initAuthListener(){
-  const client = initSupabaseClient();
-  if(!client || client._akhdimliAuthBound) return;
-  client._akhdimliAuthBound = true;
-
-  client.auth.getSession().then(async ({ data })=>{
-    if(data?.session?.user){
-      await ensureUserProfileAndStatus(data.session.user);
-      render();
-    }
-  });
-
-  client.auth.onAuthStateChange(async (event, session)=>{
-    if(session?.user){
-      await ensureUserProfileAndStatus(session.user);
-      render();
-    } else if(event === "SIGNED_OUT"){
-      currentAuthUser = null;
-      currentAuthProfile = null;
-      render();
-    }
-  });
-}
-
-function openAuthModal(initialMode = "login"){
-  const client = initSupabaseClient();
-  if(!client){ toast("تعذر الاتصال بخدمة المصادقة"); return; }
-
-  let mode = initialMode;
-  const dlg = document.getElementById("dlg");
-
-  const paint = ()=>{
-    dlg.innerHTML = `
-      <h2 style="margin:0 0 4px">${mode === "login" ? "تسجيل الدخول" : "إنشاء حساب جديد"}</h2>
-      <div class="sub">حساب المستخدم لمتابعة الطلبات والمحادثات وملفك الشخصي.</div>
-      <div class="auth-tabs" style="margin-top:12px">
-        <button type="button" class="btn sm ${mode==="login"?"main":""}" id="mTabLogin">تسجيل دخول</button>
-        <button type="button" class="btn sm ${mode==="signup"?"main":""}" id="mTabSignup">حساب جديد</button>
-      </div>
-      ${mode === "signup" ? `
-        <label>الاسم الكامل</label>
-        <input id="authName" value="${db.userProfile?.name || ""}" placeholder="مثال: عبدالوهاب">
-        <label>رقم الهاتف (اختياري)</label>
-        <input id="authPhone" value="${db.userProfile?.phone || ""}" placeholder="091...">
-        <label>المدينة (اختياري)</label>
-        <input id="authCity" value="${db.userProfile?.city || ""}" placeholder="البيضاء">
-      ` : ""}
-      <label>البريد الإلكتروني</label>
-      <input type="email" id="authEmail" placeholder="name@example.com" autocomplete="email">
-      <label>كلمة المرور</label>
-      <input type="password" id="authPass" placeholder="••••••••" autocomplete="${mode==="login"?"current-password":"new-password"}">
-      <div class="auth-err" id="authModalErr">${authBannerMessage || ""}</div>
-      <div class="row" style="margin-top:14px">
-        <button type="button" class="btn" id="authCancel">إغلاق</button>
-        <button type="button" class="btn main" id="authSubmit">${mode === "login" ? "دخول" : "إنشاء الحساب"}</button>
-      </div>
-    `;
-
-    document.getElementById("mTabLogin").onclick = ()=>{ mode = "login"; paint(); };
-    document.getElementById("mTabSignup").onclick = ()=>{ mode = "signup"; paint(); };
-    document.getElementById("authCancel").onclick = ()=>dlg.close();
-
-    document.getElementById("authSubmit").onclick = async ()=>{
-      const errEl = document.getElementById("authModalErr");
-      const btn = document.getElementById("authSubmit");
-      const email = (document.getElementById("authEmail")?.value || "").trim();
-      const password = document.getElementById("authPass")?.value || "";
-      if(!email || !password){
-        errEl.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور.";
-        return;
-      }
-      btn.disabled = true;
-      errEl.textContent = "";
-      try{
-        if(mode === "login"){
-          const { data, error } = await client.auth.signInWithPassword({ email, password });
-          if(error) throw error;
-          const prof = await ensureUserProfileAndStatus(data.user);
-          if(!prof){
-            errEl.textContent = authBannerMessage || "الحساب موقوف مؤقتاً.";
-            btn.disabled = false;
-            return;
-          }
-          dlg.close();
-          toast("تم تسجيل الدخول بنجاح");
-          render();
-        } else {
-          const fullName = (document.getElementById("authName")?.value || "").trim();
-          const phone = (document.getElementById("authPhone")?.value || "").trim();
-          const city = (document.getElementById("authCity")?.value || "").trim();
-          const { data, error } = await client.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: fullName, role: "user" } }
-          });
-          if(error) throw error;
-          if(data.user && data.session){
-            await client.from("profiles").upsert({
-              id: data.user.id,
-              full_name: fullName || db.userProfile?.name || "",
-              phone: phone || db.userProfile?.phone || "",
-              city: city || db.userProfile?.city || "",
-              role: "user",
-              is_active: true
-            }, { onConflict: "id" });
-            await ensureUserProfileAndStatus(data.user);
-            dlg.close();
-            toast("تم إنشاء الحساب وتسجيل الدخول");
-            render();
-          } else {
-            errEl.style.color = "var(--ok)";
-            errEl.textContent = "تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول.";
-            btn.disabled = false;
-          }
-        }
-      }catch(e){
-        errEl.style.color = "var(--bad)";
-        errEl.textContent = e?.message || "تعذر إتمام العملية، تحقق من البيانات.";
-        btn.disabled = false;
-      }
-    };
-  };
-
-  paint();
-  dlg.showModal();
-}
-
-async function logoutUser(){
-  const client = initSupabaseClient();
-  if(client){
-    await client.auth.signOut();
-  }
-  currentAuthUser = null;
-  currentAuthProfile = null;
-  toast("تم تسجيل الخروج");
-  render();
 }
 
 function mapProFromRow(r){
@@ -1148,15 +941,6 @@ function render(){
   const m = document.getElementById("main");
   m.innerHTML = "";
 
-  if(authBannerMessage && !currentAuthUser){
-    m.insertAdjacentHTML("beforeend",`
-      <div class="card" style="border-color:var(--bad)">
-        <b style="color:var(--bad)">تنبيه الحساب</b>
-        <div class="sub" style="margin-top:4px">${authBannerMessage}</div>
-      </div>
-    `);
-  }
-
   if(ui.tab === "home"){
     const cities = ["الكل", ...new Set(db.pros.map(p=>p.city))];
     const searchBox = document.createElement("div");
@@ -1343,7 +1127,7 @@ function render(){
     const completedCount = db.orders.filter(o=>o.status==="مكتمل").length;
     const isComplete = Boolean(up.name && up.phone && up.city);
 
-    m.innerHTML += `
+    m.innerHTML = `
       <div class="card">
         <div class="top">
           <div class="av">${svgIcon("user", 26)}</div>
@@ -1351,17 +1135,6 @@ function render(){
             <h3>${up.name || "مستخدم اخدملي"} <span class="badge ${isComplete?"ok":""}">${isComplete?"ملف مكتمل":"ناقص البيانات"}</span></h3>
             <div class="sub">${up.city || "لم تحدد المدينة"} • ${up.phone || "بدون هاتف"}</div>
           </div>
-          <span class="badge ${currentAuthUser?"ok":""}" style="margin-inline-start:auto">${currentAuthUser?"مسجّل الدخول":"وضع الزائر"}</span>
-        </div>
-        ${currentAuthUser ? `
-          <div class="sub" style="margin-top:8px">البريد الإلكتروني المرتبط: <b>${currentAuthUser.email || ""}</b></div>
-        ` : ""}
-        <div class="row" style="margin-top:12px">
-          ${currentAuthUser
-            ? `<button type="button" class="btn bad sm" id="logoutUserBtn">تسجيل الخروج</button>`
-            : `<button type="button" class="btn main sm" id="openLoginBtn">تسجيل الدخول</button>
-               <button type="button" class="btn sm" id="openSignupBtn">إنشاء حساب</button>`
-          }
         </div>
         <div class="stats" style="margin:12px 0 0">
           <div class="stat"><small>إجمالي الطلبات</small><b>${db.orders.length}</b></div>
@@ -1372,7 +1145,7 @@ function render(){
 
       <div class="card">
         <h3 style="margin:0 0 4px">تعديل الملف الشخصي</h3>
-        <div class="sub">تُحفظ بياناتك محلياً في المتصفح وتُزامن مع حسابك عند تسجيل الدخول.</div>
+        <div class="sub">تُحفظ بياناتك محلياً في المتصفح لتعبئة الطلبات والمحادثات تلقائياً.</div>
         <label>الاسم الكامل</label>
         <input id="upName" value="${up.name||""}" placeholder="مثال: عبدالوهاب">
         <label>رقم الهاتف</label>
@@ -1388,18 +1161,7 @@ function render(){
         </div>
       </div>
     `;
-
-    if(document.getElementById("logoutUserBtn")){
-      document.getElementById("logoutUserBtn").onclick = logoutUser;
-    }
-    if(document.getElementById("openLoginBtn")){
-      document.getElementById("openLoginBtn").onclick = ()=>openAuthModal("login");
-    }
-    if(document.getElementById("openSignupBtn")){
-      document.getElementById("openSignupBtn").onclick = ()=>openAuthModal("signup");
-    }
-
-    document.getElementById("saveUserBtn").onclick = async ()=>{
+    document.getElementById("saveUserBtn").onclick = ()=>{
       db.userProfile = {
         name: document.getElementById("upName").value.trim(),
         phone: document.getElementById("upPhone").value.trim(),
@@ -1407,20 +1169,7 @@ function render(){
         address: document.getElementById("upAddress").value.trim(),
         bio: document.getElementById("upBio").value.trim()
       };
-      saveDB();
-      if(currentAuthUser && sbClient){
-        await sbClient.from("profiles").upsert({
-          id: currentAuthUser.id,
-          full_name: db.userProfile.name,
-          phone: db.userProfile.phone,
-          city: db.userProfile.city,
-          address: db.userProfile.address,
-          bio: db.userProfile.bio,
-          role: "user",
-          is_active: currentAuthProfile?.is_active !== false
-        }, { onConflict: "id" });
-      }
-      toast("تم حفظ الملف الشخصي"); render();
+      saveDB(); toast("تم حفظ الملف الشخصي"); render();
     };
   }
 
@@ -1441,7 +1190,6 @@ function render(){
     nav.append(b);
   });
 }
-initAuthListener();
 render();
 subscribeSupabaseRealtime();
 syncFromSupabase(true);
